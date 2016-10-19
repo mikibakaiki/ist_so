@@ -18,6 +18,16 @@
 
 #define ATRASO 1
 
+
+typedef struct  {
+
+	int operacao;
+	int idConta;
+	int valor;
+	
+} comando_t;
+
+
 void inicializarContas();
 int contaExiste(int idConta);
 int debitar(int idConta, int valor);

@@ -29,6 +29,8 @@
 
 #define MAXARGS 3
 #define BUFFER_SIZE 100
+#define NUM_TRABALHADORAS 3
+#define CMD_BUFFER_DIM (NUM_TRABALHADORAS * 2)
 
 
 
