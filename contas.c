@@ -155,3 +155,11 @@ void handler(int sig)  {
 
 
 
+
+
+void *selComando(void *ptr)  {
+
+
+}
+
+

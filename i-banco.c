@@ -19,6 +19,7 @@
 #include <sys/wait.h>
 #include <sys/types.h>
 #include <errno.h>
+#include <pthread.h>
 
 #define COMANDO_DEBITAR "debitar"
 #define COMANDO_CREDITAR "creditar"
@@ -29,8 +30,13 @@
 
 #define MAXARGS 3
 #define BUFFER_SIZE 100
-#define NUM_TRABALHADORAS 3
-#define CMD_BUFFER_DIM (NUM_TRABALHADORAS * 2)
+
+#define NUM_TRABALHADORAS 3  /*numero de threads*/
+#define CMD_BUFFER_DIM (NUM_TRABALHADORAS * 2)  /*dimensao do buffer circular*/
+
+#define OP_LERSALDO 0
+#define OP_CREDITAR 1
+#define OP_DEBITAR 2
 
 
 
@@ -42,6 +48,22 @@ int main (int argc, char** argv)  {
 
     inicializarContas();
 
+
+
+    /***************************************************************/
+                                                  /* os valores que serão passados a respectiva funcao*/
+    pthread_t tid[NUM_TRABALHADORAS];
+
+    comando_t cmdbuffer[CMD_BUFFER_DIM];
+
+    int buff_write_idx = 0, buff_read_idx = 0;
+
+    int t;
+
+    for(t = 0; t < NUM_TRABALHADORAS; t++)  {
+        pthread_create(&tid[t], NULL, thr_consumer, NULL);
+    }
+    /***************************************************************/
 
 
     printf("Bem-vinda/o ao i-banco\n\n");
@@ -115,7 +137,6 @@ int main (int argc, char** argv)  {
 
         else if (strcmp(args[0], COMANDO_DEBITAR) == 0)  {
 
-            int idConta, valor;
 
             if (numargs < 3)  {
 
@@ -123,10 +144,15 @@ int main (int argc, char** argv)  {
                 
                 continue;
             }
+            comando_t *debPtr;
 
-            idConta = atoi(args[1]);
+            debPtr = cmdbuffer[OP_DEBITAR];
 
-            valor = atoi(args[2]);
+            debPtr->operacao =  OP_DEBITAR;
+            debPtr->idConta = atoi(args[1]);
+            debPtr->valor = atoi(args[2]);
+
+
 
             if (debitar (idConta, valor) < 0)
 
