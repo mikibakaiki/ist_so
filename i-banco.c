@@ -20,6 +20,7 @@
 #include <sys/types.h>
 #include <errno.h>
 #include <pthread.h>
+#include <semaphore.h>
 
 #define COMANDO_DEBITAR "debitar"
 #define COMANDO_CREDITAR "creditar"
@@ -65,6 +66,7 @@ int main (int argc, char** argv)  {
     for(t = 0; t < NUM_TRABALHADORAS; t++)  {
         pthread_create(&tid[t], NULL, thr_consumer, NULL);
     }
+
     /***************************************************************/
 
 
