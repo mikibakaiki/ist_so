@@ -155,9 +155,24 @@ void handler(int sig)  {
 
 
 
+comando_t produzir(int op, int id, int val)  {
+
+  comando_t *i = (comando_t *) malloc(sizeof(struct));
+
+  i->operacao = op;
+  i->idConta = id;
+  i->valor = val;
+  /*Damos free no final de usarmos cada ponteiro ou depois de usarmos todos ?! */
+
+  return i;
+}
+
+
 
 
 void *selComando(void *ptr)  {
+
+
 
 
 }

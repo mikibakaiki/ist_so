@@ -35,6 +35,7 @@ int creditar(int idConta, int valor);
 int lerSaldo(int idConta);
 void simular(int numAnos);
 void handler(int sig);
+comando_t produzir(int op, int id, int val);
 
 
 #endif

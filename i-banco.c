@@ -60,6 +60,8 @@ int main (int argc, char** argv)  {
 
     int t;
 
+    int numMall = 0;
+
     for(t = 0; t < NUM_TRABALHADORAS; t++)  {
         pthread_create(&tid[t], NULL, thr_consumer, NULL);
     }
@@ -137,6 +139,11 @@ int main (int argc, char** argv)  {
 
         else if (strcmp(args[0], COMANDO_DEBITAR) == 0)  {
 
+            comando_t i;
+
+            i = produzir(OP_DEBITAR, args[1], args[2]);
+
+            numMall++;
 
             if (numargs < 3)  {
 
@@ -144,14 +151,6 @@ int main (int argc, char** argv)  {
                 
                 continue;
             }
-            comando_t *debPtr;
-
-            debPtr = cmdbuffer[OP_DEBITAR];
-
-            debPtr->operacao =  OP_DEBITAR;
-            debPtr->idConta = atoi(args[1]);
-            debPtr->valor = atoi(args[2]);
-
 
 
             if (debitar (idConta, valor) < 0)
@@ -166,6 +165,12 @@ int main (int argc, char** argv)  {
         /* Creditar */
 
         else if (strcmp(args[0], COMANDO_CREDITAR) == 0)  {
+
+            comando_t i;
+
+            i = produzir(OP_CREDITAR, args[1], args[2]);
+
+            numMall++;
 
             int idConta, valor;
 
@@ -192,6 +197,12 @@ int main (int argc, char** argv)  {
         /* Ler Saldo */
 
         else if (strcmp(args[0], COMANDO_LER_SALDO) == 0)  {
+
+            comando_t i;
+
+            i = produzir(OP_LERSALDO, args[1], -1);
+
+            numMall++;
 
             int idConta, saldo;
 
@@ -256,3 +267,7 @@ int main (int argc, char** argv)  {
             printf("Comando desconhecido. Tente de novo.\n"); 
     }
 }
+
+
+
+
