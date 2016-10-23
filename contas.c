@@ -51,7 +51,7 @@ void inicializarContas()  {
 
   for (i=0; i<NUM_CONTAS; i++)
 
-    contasSaldos[i] = 0;
+	contasSaldos[i] = 0;
 }
 
 
@@ -61,11 +61,11 @@ int debitar(int idConta, int valor)  {
 
   if (!contaExiste(idConta))
 
-    return -1;
+	return -1;
 
   if (contasSaldos[idConta - 1] < valor)
 
-    return -1;
+	return -1;
 
   atrasar();
 
@@ -77,76 +77,77 @@ int debitar(int idConta, int valor)  {
 
 int creditar(int idConta, int valor)  {
 
-  atrasar();
+  	atrasar();
 
-  if (!contaExiste(idConta))
+  	if (!contaExiste(idConta))
 
-    return -1;
+		return -1;
 
-  contasSaldos[idConta - 1] += valor;
+  	contasSaldos[idConta - 1] += valor;
 
-  return 0;
+  	return 0;
 }
 
 
 int lerSaldo(int idConta)  {
 
-    atrasar();
+	atrasar();
 
-    if (!contaExiste(idConta))
+	if (!contaExiste(idConta))
 
-        return -1;
+		return -1;
 
-    return contasSaldos[idConta - 1];
+	return contasSaldos[idConta - 1];
 }
 
 
 void simular(int numAnos)  {
 
-  int ano, saldo, idConta;
+  	int ano, saldo, idConta;
 
-  /* Ciclo que percorre o numero de anos até que seja igual ao
-   * Numero de anos que o utilizador introduziu ou até o processo filho
-   * receber um signal do processo pai.*/
+  	/* Ciclo que percorre o numero de anos até que seja igual ao
+   	* Numero de anos que o utilizador introduziu ou até o processo filho
+   	* receber um signal do processo pai.*/
 
 	for (ano = 0; ano < numAnos && sig_find != 1; ano++)  {
 
-        printf("\nSIMULACAO: Ano %d\n", ano);
+		printf("\nSIMULACAO: Ano %d\n", ano);
 
-        printf("=================\n");
-        
-        /* Simula o valor de cada conta, num determinado ano.
-         * Credita-se a taxa de juro e, caso o saldo nao seja suficiente para debitar
-         * o custo de manutencao, a conta fica a zero.
-         * Caso contrario, e debitado o valor.*/
+		printf("=================\n");
+		
+		/* Simula o valor de cada conta, num determinado ano.
+		 * Credita-se a taxa de juro e, caso o saldo nao seja suficiente para debitar
+		 * o custo de manutencao, a conta fica a zero.
+		 * Caso contrario, e debitado o valor.*/
 
 		for (idConta = 1; idConta <= NUM_CONTAS; idConta++)  {
 
-            saldo = lerSaldo(idConta);
+			saldo = lerSaldo(idConta);
 
 			if (ano != 0)  {
 			
-          creditar(idConta, saldo*TAXAJURO);
+		  		creditar(idConta, saldo*TAXAJURO);
 
-          if (saldo < CUSTOMANUTENCAO)
+		  	if (saldo < CUSTOMANUTENCAO)
 
-            debitar(idConta, saldo);
+				debitar(idConta, saldo);
 
-          else
-            debitar(idConta, CUSTOMANUTENCAO);
+		  	else
+				debitar(idConta, CUSTOMANUTENCAO);
 
-        saldo = lerSaldo(idConta);
-      }
+			saldo = lerSaldo(idConta);
+			}
 
-      printf("Conta %d, Saldo %d\n", idConta, saldo);   
-    }
-  }
+		printf("Conta %d, Saldo %d\n", idConta, saldo);
 
-    /* Se um signal for enviado pelo processo pai, imprime a mensagem.*/
+		}
+ 	}
 
-  if (sig_find == 1)
+	/* Se um signal for enviado pelo processo pai, imprime a mensagem.*/
 
-    printf("Simulacao terminada por signal\n");
+  	if (sig_find == 1)
+
+		printf("Simulacao terminada por signal\n");
 }
 
 
@@ -156,9 +157,9 @@ void simular(int numAnos)  {
 
 void handler(int sig)  {
 
-    sig_find = 1;
+	sig_find = 1;
 
-    signal(sig, handler);
+	signal(sig, handler);
 }
 
 
@@ -182,49 +183,90 @@ comando_t produzir(int op, int id, int val)  {
 
 void put(comando_t *item)  {
 
-  sem_wait(&write);
-  /*fechar(MutexP);*/
+	sem_wait(&write);
+	/*fechar(MutexP);*/
 
-  cmdbuffer[buff_write_idx] = *item;
+	cmdbuffer[buff_write_idx] = *item;
 
-  buff_write_idx = (buff_write_idx+1) % CMD_BUFFER_DIM;
+	buff_write_idx = (buff_write_idx + 1) % CMD_BUFFER_DIM;
 
-  /*abrir*/
+	/*abrir*/
 
- sem_post(&read);
+	sem_post(&read);
 
 }
 
 
-void thr_consumer () {
+void *thr_consumer (void *item) {
 
-  while(1)  {
+  	while(1)  {
 
-    comando_t *item = (comando_t *) malloc(sizeof(struct));
+		item = (comando_t *) malloc(sizeof(struct));
 
-    item = get();
+		item = get();
 
-    consume(item);
-  }
+		consume(item);
+  	}
 }
 
 
 comando_t get()  {
 
-  sem_wait(&read);
+  	sem_wait(&read);
 
-  /*mutex*/
+  	/*mutex*/
 
-  comando_t *item = (comando_t *) malloc(sizeof(struct));
+  	comando_t *item = (comando_t *) malloc(sizeof(struct));
 
-  *item = cmdbuffer[buff_read_idx];
+  	*item = cmdbuffer[buff_read_idx];
 
-  buff_read_idx = (buff_read_idx + 1) % CMD_BUFFER_DIM;
+  	buff_read_idx = (buff_read_idx + 1) % CMD_BUFFER_DIM;
 
-  /*mutex*/
+  	/*mutex*/
 
-  sem_post(&write);
+	sem_post(&write);
 
-  return *item;
+	return *item;
 
+}
+
+
+void consume(comando_t *item)  {
+
+	int saldo;
+
+	if (item->operacao == OP_LERSALDO)  {
+
+		saldo = lerSaldo(item->idConta);
+
+		if (saldo < 0)
+
+        	printf("%s(%d): Erro.\n\n", COMANDO_LER_SALDO, item->idConta);
+
+    	else
+
+        	printf("%s(%d): O saldo da conta é %d.\n\n", COMANDO_LER_SALDO, item->idConta, saldo);
+	}
+
+	if (item->operacao == OP_CREDITAR)  {
+
+		if (creditar (item->idConta, item->valor) < 0)
+
+            printf("%s(%d, %d): Erro\n\n", COMANDO_CREDITAR, item->idConta, item->valor);
+
+    	else
+
+            printf("%s(%d, %d): OK\n\n", COMANDO_CREDITAR, item->idConta, item->valor);
+	}
+
+	if (item->operacao == OP_DEBITAR)  {
+
+		if (debitar (item->idConta, item->valor) < 0)
+
+            printf("%s(%d, %d): Erro\n\n", COMANDO_DEBITAR, item->idConta, item->valor);
+
+        else
+
+            printf("%s(%d, %d): OK\n\n", COMANDO_DEBITAR, item->idConta, item->valor);
+	}
 }
