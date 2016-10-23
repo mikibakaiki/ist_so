@@ -210,7 +210,7 @@ void *thr_consumer (void *item) {
 }
 
 
-comando_t get()  {
+comando_t *get()  {
 
   	sem_wait(&read);
 
@@ -218,7 +218,7 @@ comando_t get()  {
 
   	comando_t *item = (comando_t *) malloc(sizeof(struct));
 
-  	*item = cmdbuffer[buff_read_idx];
+  	item = cmdbuffer[buff_read_idx];
 
   	buff_read_idx = (buff_read_idx + 1) % CMD_BUFFER_DIM;
 
@@ -226,7 +226,7 @@ comando_t get()  {
 
 	sem_post(&write);
 
-	return *item;
+	return item;
 
 }
 

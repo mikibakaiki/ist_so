@@ -59,6 +59,9 @@ int main (int argc, char** argv)  {
 
     int buff_write_idx = 0, buff_read_idx = 0;
 
+    pthread_mutex_t mutexC;
+    pthread_mutex_t mutexP;
+
     int t;
 
     int numMall = 0;
