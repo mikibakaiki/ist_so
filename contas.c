@@ -15,15 +15,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <signal.h>
+#include <pthread.h>
+#include <semaphore.h>
 
 #define atrasar() sleep(ATRASO)
-
-
-sem_t read;
-sem_init(&read, 1, 0);
-
-sem_t write;
-sem_init(&write, 1, CMD_BUFFER_DIM);
 
 
 /***   CONSTANTES   ***/ 
@@ -168,7 +163,7 @@ void handler(int sig)  {
 /*************************/
 
 
-comando_t produzir(int op, int id, int val)  {
+comando_t *produzir(int op, int id, int val)  {
 
   comando_t *i = (comando_t *) malloc(sizeof(struct));
 
@@ -184,16 +179,16 @@ comando_t produzir(int op, int id, int val)  {
 void put(comando_t *item)  {
 
 	sem_wait(&write);
-	/*fechar(MutexP);*/
+
+	pthread_mutex_lock(&mutexP);
 
 	cmdbuffer[buff_write_idx] = *item;
 
 	buff_write_idx = (buff_write_idx + 1) % CMD_BUFFER_DIM;
 
-	/*abrir*/
+	pthread_mutex_unlock(&mutexP);
 
 	sem_post(&read);
-
 }
 
 
@@ -201,7 +196,7 @@ void *thr_consumer (void *item) {
 
   	while(1)  {
 
-		item = (comando_t *) malloc(sizeof(struct));
+		(comando_t *) item = (comando_t *) malloc(sizeof(struct));
 
 		item = get();
 
@@ -214,7 +209,7 @@ comando_t *get()  {
 
   	sem_wait(&read);
 
-  	/*mutex*/
+  	pthread_mutex_lock(&mutexC);
 
   	comando_t *item = (comando_t *) malloc(sizeof(struct));
 
@@ -222,16 +217,15 @@ comando_t *get()  {
 
   	buff_read_idx = (buff_read_idx + 1) % CMD_BUFFER_DIM;
 
-  	/*mutex*/
+  	pthread_mutex_unlock(&mutexC);
 
 	sem_post(&write);
 
 	return item;
-
 }
 
 
-void consume(comando_t *item)  {
+int consume(comando_t *item)  {
 
 	int saldo;
 
@@ -269,4 +263,6 @@ void consume(comando_t *item)  {
 
             printf("%s(%d, %d): OK\n\n", COMANDO_DEBITAR, item->idConta, item->valor);
 	}
+
+	return 0;
 }

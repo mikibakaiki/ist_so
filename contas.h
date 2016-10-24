@@ -18,6 +18,15 @@
 
 #define ATRASO 1
 
+#define NUM_TRABALHADORAS 3  /*numero de threads*/
+#define CMD_BUFFER_DIM (NUM_TRABALHADORAS * 2)  /*dimensao do buffer circular*/
+
+#define OP_LERSALDO 0
+#define OP_CREDITAR 1
+#define OP_DEBITAR 2
+#define OP_SAIR 3
+#define OP_SAIR_AGORA 4
+
 
 typedef struct  {
 
@@ -36,6 +45,9 @@ int lerSaldo(int idConta);
 void simular(int numAnos);
 void handler(int sig);
 comando_t produzir(int op, int id, int val);
+void *thr_consumer (void *item);
+comando_t *get();
+int consume(comando_t *item);
 
 
 #endif

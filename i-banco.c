@@ -48,11 +48,7 @@ int main (int argc, char** argv)  {
     char buffer[BUFFER_SIZE];
 
     inicializarContas();
-
-
-
-    /***************************************************************/
-                                                  /* os valores que serão passados a respectiva funcao*/
+    
     pthread_t tid[NUM_TRABALHADORAS];
 
     comando_t cmdbuffer[CMD_BUFFER_DIM];
@@ -66,12 +62,12 @@ int main (int argc, char** argv)  {
 
     int numMall = 0;
 
+
     for(t = 0; t < NUM_TRABALHADORAS; t++)  {
 
         pthread_create(&tid[t], NULL, thr_consumer, NULL);
     }
 
-    /***************************************************************/
 
 
     printf("Bem-vinda/o ao i-banco\n\n");
@@ -91,13 +87,30 @@ int main (int argc, char** argv)  {
 
         if  (numargs < 0 ||
             (numargs > 0 &&
-            (strcmp(args[0], COMANDO_SAIR) == 0)))  {
+            (strcmp(args[0], COMANDO_SAIR) == 0) || 
+            (numargs > 1 && (strcmp(args[0], COMANDO_SAIR) == 0) && strcmp(args[1], "agora") == 0)))  {
 
-            if (numargs > 1 && strcmp(args[1], "agora") == 0)
 
-                /* A funcao kill() envia um signal a todos os processos, incluindo o processo pai.*/
+        	int i;
+            /*if (numargs > 1 && strcmp(args[1], "agora") == 0)*/
 
-                kill(0, SIGUSR1);
+        	/*comando_t *ptr = (comando_t *) malloc(sizeof(struct));
+        
+            numMall++;
+
+            ptr = produzir(OP_SAIR_AGORA, -1, -1);
+
+            numMall++;
+
+            put(ptr);*/
+        	for(i = 0; i < NUM_TRABALHADORAS; i++)  {
+
+        		pthread_join(tid[i], NULL);
+        	}
+          	
+            /* A funcao kill() envia um signal a todos os processos, incluindo o processo pai.*/
+
+            /*kill(0, SIGUSR1);*/
             
             int estado;
             pid_t test;
@@ -132,7 +145,6 @@ int main (int argc, char** argv)  {
             exit(EXIT_SUCCESS);
         }
 
-
     
         else if (numargs == 0)
 
@@ -145,40 +157,36 @@ int main (int argc, char** argv)  {
 
         else if (strcmp(args[0], COMANDO_DEBITAR) == 0)  {
 
-            comando_t *ptr;
-
-            ptr = produzir(OP_DEBITAR, args[1], args[2]);
-
-            numMall++;
-
-            if (numargs < 3)  {
+        	if (numargs < 3)  {
 
                 printf("%s: Sintaxe inválida, tente de novo.\n", COMANDO_DEBITAR);
                 
                 continue;
             }
 
+            comando_t *ptr = (comando_t *) malloc(sizeof(struct));
 
-            if (debitar (idConta, valor) < 0)
+            numMall++;
+
+            ptr = produzir(OP_DEBITAR, args[1], args[2]);
+
+            numMall++;
+
+            put(ptr);
+
+
+            /*if (debitar (idConta, valor) < 0)
 
                 printf("%s(%d, %d): Erro\n\n", COMANDO_DEBITAR, idConta, valor);
 
             else
 
-                printf("%s(%d, %d): OK\n\n", COMANDO_DEBITAR, idConta, valor);
+                printf("%s(%d, %d): OK\n\n", COMANDO_DEBITAR, idConta, valor);*/
         }
 
         /* Creditar */
 
         else if (strcmp(args[0], COMANDO_CREDITAR) == 0)  {
-
-            comando_t *ptr;
-
-            ptr = produzir(OP_CREDITAR, args[1], args[2]);
-
-            numMall++;
-
-            int idConta, valor;
 
             if (numargs < 3)  {
 
@@ -186,6 +194,17 @@ int main (int argc, char** argv)  {
 
                 continue;
             }
+
+            comando_t *ptr = (comando_t *) malloc(sizeof(struct));
+            numMall++;
+
+            ptr = produzir(OP_CREDITAR, args[1], args[2]);
+
+            numMall++;
+
+            put(ptr);
+
+            /*int idConta, valor;
 
             idConta = atoi(args[1]);
 
@@ -197,20 +216,30 @@ int main (int argc, char** argv)  {
 
             else
 
-                printf("%s(%d, %d): OK\n\n", COMANDO_CREDITAR, idConta, valor);
+                printf("%s(%d, %d): OK\n\n", COMANDO_CREDITAR, idConta, valor);*/
         }
 
         /* Ler Saldo */
 
         else if (strcmp(args[0], COMANDO_LER_SALDO) == 0)  {
 
-            comando_t *ptr;
+            if (numargs < 2)  {
+
+                printf("%s: Sintaxe inválida, tente de novo.\n", COMANDO_LER_SALDO);
+
+                continue;
+            }
+
+            comando_t *ptr = (comando_t *) malloc(sizeof(struct));
+            numMall++;
 
             ptr = produzir(OP_LERSALDO, args[1], -1);
 
             numMall++;
 
-            int idConta, saldo;
+            put(ptr);
+
+            /*int idConta, saldo;
 
             if (numargs < 2)  {
 
@@ -229,7 +258,7 @@ int main (int argc, char** argv)  {
 
             else
 
-                printf("%s(%d): O saldo da conta é %d.\n\n", COMANDO_LER_SALDO, idConta, saldo);
+                printf("%s(%d): O saldo da conta é %d.\n\n", COMANDO_LER_SALDO, idConta, saldo);*/
         }
 
         /* Simular */
