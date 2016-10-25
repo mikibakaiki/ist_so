@@ -23,8 +23,23 @@
 
 /***   CONSTANTES   ***/ 
 
-
 int contasSaldos[NUM_CONTAS];
+
+int buff_write_idx = 0, buff_read_idx = 0;
+
+pthread_mutex_t mutexC;
+pthread_mutex_init(&mutexC, NULL);
+
+pthread_mutex_t mutexP;
+pthread_mutex_init(&mutexP, NULL);
+
+sem_t read;
+sem_init(&read, 1, 0);
+
+sem_t write;
+sem_init(&write, 1, CMD_BUFFER_DIM);
+
+
 
 /* Flag para verificar signals.*/
 
@@ -163,26 +178,26 @@ void handler(int sig)  {
 /*************************/
 
 
-comando_t *produzir(int op, int id, int val)  {
+comando_t produzir(int op, int id, int val)  {
 
-  comando_t *i = (comando_t *) malloc(sizeof(struct));
+  comando_t i;
 
-  i->operacao = op;
-  i->idConta = id;
-  i->valor = val;
+  i.operacao = op;
+  i.idConta = id;
+  i.valor = val;
   /*Damos free no final de usarmos cada ponteiro ou depois de usarmos todos ?! */
 
-  return *i;
+  return i;
 }
 
 
-void put(comando_t *item)  {
+void put(comando_t item)  {
 
 	sem_wait(&write);
 
 	pthread_mutex_lock(&mutexP);
 
-	cmdbuffer[buff_write_idx] = *item;
+	cmdbuffer[buff_write_idx] = item;
 
 	buff_write_idx = (buff_write_idx + 1) % CMD_BUFFER_DIM;
 
@@ -192,26 +207,34 @@ void put(comando_t *item)  {
 }
 
 
-void *thr_consumer (void *item) {
+void *thr_consumer (void *) {
+
+	int x;
 
   	while(1)  {
 
-		(comando_t *) item = (comando_t *) malloc(sizeof(struct));
+		comando_t item;
 
 		item = get();
 
-		consume(item);
+		x = consume(item);
+
+		if (x == 1)
+			
+			break;
   	}
+
+  	return NULL;
 }
 
 
-comando_t *get()  {
+comando_t get()  {
 
   	sem_wait(&read);
 
   	pthread_mutex_lock(&mutexC);
 
-  	comando_t *item = (comando_t *) malloc(sizeof(struct));
+  	comando_t item;
 
   	item = cmdbuffer[buff_read_idx];
 
@@ -225,43 +248,49 @@ comando_t *get()  {
 }
 
 
-int consume(comando_t *item)  {
+int consume(comando_t item)  {
 
 	int saldo;
 
-	if (item->operacao == OP_LERSALDO)  {
+	if (item.operacao == OP_LERSALDO)  {
 
-		saldo = lerSaldo(item->idConta);
+		saldo = lerSaldo(item.idConta);
 
 		if (saldo < 0)
 
-        	printf("%s(%d): Erro.\n\n", COMANDO_LER_SALDO, item->idConta);
+        	printf("%s(%d): Erro.\n\n", COMANDO_LER_SALDO, item.idConta);
 
     	else
 
-        	printf("%s(%d): O saldo da conta é %d.\n\n", COMANDO_LER_SALDO, item->idConta, saldo);
+        	printf("%s(%d): O saldo da conta é %d.\n\n", COMANDO_LER_SALDO, item.idConta, saldo);
 	}
 
-	if (item->operacao == OP_CREDITAR)  {
+	if (item.operacao == OP_CREDITAR)  {
 
-		if (creditar (item->idConta, item->valor) < 0)
+		if (creditar (item.idConta, item.valor) < 0)
 
-            printf("%s(%d, %d): Erro\n\n", COMANDO_CREDITAR, item->idConta, item->valor);
+            printf("%s(%d, %d): Erro\n\n", COMANDO_CREDITAR, item.idConta, item.valor);
 
     	else
 
-            printf("%s(%d, %d): OK\n\n", COMANDO_CREDITAR, item->idConta, item->valor);
+            printf("%s(%d, %d): OK\n\n", COMANDO_CREDITAR, item.idConta, item.valor);
 	}
 
-	if (item->operacao == OP_DEBITAR)  {
+	if (item.operacao == OP_DEBITAR)  {
 
-		if (debitar (item->idConta, item->valor) < 0)
+		if (debitar (item.idConta, item.valor) < 0)
 
-            printf("%s(%d, %d): Erro\n\n", COMANDO_DEBITAR, item->idConta, item->valor);
+            printf("%s(%d, %d): Erro\n\n", COMANDO_DEBITAR, item.idConta, item.valor);
 
         else
 
-            printf("%s(%d, %d): OK\n\n", COMANDO_DEBITAR, item->idConta, item->valor);
+            printf("%s(%d, %d): OK\n\n", COMANDO_DEBITAR, item.idConta, item.valor);
+	}
+
+	if (item.operacao == OP_SAIR)  {
+
+		return 1;
+
 	}
 
 	return 0;

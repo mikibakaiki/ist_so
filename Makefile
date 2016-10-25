@@ -12,7 +12,7 @@
 
 
 i-banco: contas.o commandlinereader.o i-banco.o
-		gcc -Wall -pedantic -o i-banco contas.o commandlinereader.o i-banco.o
+		gcc -Wall -pedantic -pthread -o i-banco contas.o commandlinereader.o i-banco.o
 
 contas.o: contas.c contas.h
 		gcc -g -Wall -pedantic -c contas.c

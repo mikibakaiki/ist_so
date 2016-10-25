@@ -35,10 +35,6 @@
 #define NUM_TRABALHADORAS 3  /*numero de threads*/
 #define CMD_BUFFER_DIM (NUM_TRABALHADORAS * 2)  /*dimensao do buffer circular*/
 
-#define OP_LERSALDO 0
-#define OP_CREDITAR 1
-#define OP_DEBITAR 2
-
 
 
 int main (int argc, char** argv)  {
@@ -51,23 +47,18 @@ int main (int argc, char** argv)  {
     
     pthread_t tid[NUM_TRABALHADORAS];
 
-    comando_t cmdbuffer[CMD_BUFFER_DIM];
-
-    int buff_write_idx = 0, buff_read_idx = 0;
-
-    pthread_mutex_t mutexC;
-    pthread_mutex_t mutexP;
-
-    int t;
-
-    int numMall = 0;
-
+    int t, rc;
 
     for(t = 0; t < NUM_TRABALHADORAS; t++)  {
 
-        pthread_create(&tid[t], NULL, thr_consumer, NULL);
-    }
+        rc = pthread_create(&tid[t], NULL, thr_consumer, NULL);
 
+        if(rc != 0)  {
+        	errno = rc;
+        	perror("pthread_create");
+        	exit(EXIT_FAILURE);
+        }
+    }
 
 
     printf("Bem-vinda/o ao i-banco\n\n");
@@ -92,17 +83,13 @@ int main (int argc, char** argv)  {
 
 
         	int i;
-            /*if (numargs > 1 && strcmp(args[1], "agora") == 0)*/
 
-        	/*comando_t *ptr = (comando_t *) malloc(sizeof(struct));
-        
-            numMall++;
+        	comando_t input;
 
-            ptr = produzir(OP_SAIR_AGORA, -1, -1);
+            input = produzir(OP_SAIR, -1, -1);
+     
+            put(input);
 
-            numMall++;
-
-            put(ptr);*/
         	for(i = 0; i < NUM_TRABALHADORAS; i++)  {
 
         		pthread_join(tid[i], NULL);
@@ -164,24 +151,11 @@ int main (int argc, char** argv)  {
                 continue;
             }
 
-            comando_t *ptr = (comando_t *) malloc(sizeof(struct));
+            comando_t input;
 
-            numMall++;
+            input = produzir(OP_DEBITAR, args[1], args[2]);
 
-            ptr = produzir(OP_DEBITAR, args[1], args[2]);
-
-            numMall++;
-
-            put(ptr);
-
-
-            /*if (debitar (idConta, valor) < 0)
-
-                printf("%s(%d, %d): Erro\n\n", COMANDO_DEBITAR, idConta, valor);
-
-            else
-
-                printf("%s(%d, %d): OK\n\n", COMANDO_DEBITAR, idConta, valor);*/
+            put(input);
         }
 
         /* Creditar */
@@ -195,28 +169,12 @@ int main (int argc, char** argv)  {
                 continue;
             }
 
-            comando_t *ptr = (comando_t *) malloc(sizeof(struct));
-            numMall++;
+            comando_t input;
 
-            ptr = produzir(OP_CREDITAR, args[1], args[2]);
+            input = produzir(OP_CREDITAR, args[1], args[2]);
 
-            numMall++;
+            put(input);
 
-            put(ptr);
-
-            /*int idConta, valor;
-
-            idConta = atoi(args[1]);
-
-            valor = atoi(args[2]);
-
-            if (creditar (idConta, valor) < 0)
-
-                printf("%s(%d, %d): Erro\n\n", COMANDO_CREDITAR, idConta, valor);
-
-            else
-
-                printf("%s(%d, %d): OK\n\n", COMANDO_CREDITAR, idConta, valor);*/
         }
 
         /* Ler Saldo */
@@ -230,35 +188,11 @@ int main (int argc, char** argv)  {
                 continue;
             }
 
-            comando_t *ptr = (comando_t *) malloc(sizeof(struct));
-            numMall++;
+            comando_t input;
 
-            ptr = produzir(OP_LERSALDO, args[1], -1);
+            input = produzir(OP_LERSALDO, args[1], -1);
 
-            numMall++;
-
-            put(ptr);
-
-            /*int idConta, saldo;
-
-            if (numargs < 2)  {
-
-                printf("%s: Sintaxe inválida, tente de novo.\n", COMANDO_LER_SALDO);
-
-                continue;
-            }
-
-            idConta = atoi(args[1]);
-
-            saldo = lerSaldo (idConta);
-
-            if (saldo < 0)
-
-                printf("%s(%d): Erro.\n\n", COMANDO_LER_SALDO, idConta);
-
-            else
-
-                printf("%s(%d): O saldo da conta é %d.\n\n", COMANDO_LER_SALDO, idConta, saldo);*/
+            put(input);
         }
 
         /* Simular */

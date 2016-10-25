@@ -25,7 +25,7 @@
 #define OP_CREDITAR 1
 #define OP_DEBITAR 2
 #define OP_SAIR 3
-#define OP_SAIR_AGORA 4
+#define OP_SAIR_AGORA 3
 
 
 typedef struct  {
@@ -35,6 +35,9 @@ typedef struct  {
 	int valor;
 	
 } comando_t;
+
+comando_t cmdbuffer[CMD_BUFFER_DIM];
+
 
 
 void inicializarContas();
