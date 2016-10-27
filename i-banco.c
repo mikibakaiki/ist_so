@@ -22,11 +22,6 @@
 #include <pthread.h>
 #include <semaphore.h>
 
-/*#define COMANDO_DEBITAR "debitar"
-#define COMANDO_CREDITAR "creditar"
-#define COMANDO_LER_SALDO "lerSaldo"
-#define COMANDO_SIMULAR "simular"
-#define COMANDO_SAIR "sair"*/
 
 
 #define MAXARGS 3
