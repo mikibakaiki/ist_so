@@ -182,13 +182,13 @@ comando_t produzir(int op, int id, int val)  {
 
 void writeBuf(comando_t item)  {
 
-	sem_wait(&escrita);
+	testSemWait(&escrita);
 
 	cmdbuffer[buff_write_idx] = item;
 
 	buff_write_idx = (buff_write_idx + 1) % CMD_BUFFER_DIM;
 
-	sem_post(&leitura);
+	testSemPost(&leitura);
 }
 
 
@@ -215,9 +215,9 @@ void* thr_consumer (void *arg) {
 
 comando_t get()  {
 
-  	sem_wait(&leitura);
+  	testSemWait(&leitura);
 
-  	pthread_mutex_lock(&cadeadoC);
+  	testMutexLock(&cadeadoC);
 
   	comando_t item;
 
@@ -225,9 +225,9 @@ comando_t get()  {
 
   	buff_read_idx = (buff_read_idx + 1) % CMD_BUFFER_DIM;
 
-  	pthread_mutex_unlock(&cadeadoC);
+  	testMutexUnlock(&cadeadoC);
 
-	sem_post(&escrita);
+	testSemPost(&escrita);
 
 	return item;
 }
@@ -241,6 +241,8 @@ int consume(comando_t item)  {
 
 		saldo = lerSaldo(item.idConta);
 
+		/*mutex*/
+
 		if (saldo < 0)
 
         	printf("%s(%d): Erro.\n\n", COMANDO_LER_SALDO, item.idConta);
@@ -251,6 +253,8 @@ int consume(comando_t item)  {
 	}
 
 	if (item.operacao == OP_CREDITAR)  {
+
+		/*mutex*/
 
 		if (creditar (item.idConta, item.valor) < 0)
 
@@ -263,6 +267,8 @@ int consume(comando_t item)  {
 
 	if (item.operacao == OP_DEBITAR)  {
 
+		/*mutex*/
+
 		if (debitar (item.idConta, item.valor) < 0)
 
             printf("%s(%d, %d): Erro\n\n", COMANDO_DEBITAR, item.idConta, item.valor);
@@ -270,12 +276,63 @@ int consume(comando_t item)  {
         else
 
             printf("%s(%d, %d): OK\n\n", COMANDO_DEBITAR, item.idConta, item.valor);
+		
 	}
 
 	if (item.operacao == OP_SAIR)  {
 
 		return 1;
+	}
 
+	return 0;
+}
+
+
+
+int testMutexLock(pthread_mutex_t *cadeado)  {
+
+	int i;
+
+	if((i = pthread_mutex_lock(cadeado)) != 0)  {
+
+		errno = i;
+
+		perror("pthread_mutex_lock: ");
+	}
+
+	return 0;
+}
+
+
+int testMutexUnlock(pthread_mutex_t *cadeado)  {
+
+	int i;
+
+	if((i = pthread_mutex_unlock(cadeado)) != 0)  {
+
+		errno = i;
+
+		perror("pthread_mutex_unlock: ");
+	}
+
+	return 0;
+}
+
+int testSemWait(sem_t *semaforo)  {
+
+	if(sem_wait(semaforo) != 0)  {
+
+		perror("sem_wait: ");
+	}
+
+	return 0;
+}
+
+int testSemPost(sem_t *semaforo)  {
+
+	if(sem_post(semaforo) != 0)  {
+
+		perror("sem_post: ");
 	}
 
 	return 0;

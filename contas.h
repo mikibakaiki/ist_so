@@ -65,6 +65,13 @@ void writeBuf(comando_t item);
 void* thr_consumer(void *arg);
 comando_t get();
 int consume(comando_t item);
+int testMutexLock(pthread_mutex_t *cadeado);
+int testMutexUnlock(pthread_mutex_t *cadeado);
+int testSemWait(sem_t *semaforo);
+int testSemPost(sem_t *semaforo);
+
+
+
 
 
 #endif
