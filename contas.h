@@ -12,6 +12,9 @@
 #ifndef CONTAS_H
 #define CONTAS_H
 
+#include <pthread.h>
+#include <semaphore.h>
+
 #define NUM_CONTAS 10
 #define TAXAJURO 0.1
 #define CUSTOMANUTENCAO 1
@@ -20,6 +23,12 @@
 
 #define NUM_TRABALHADORAS 3  /*numero de threads*/
 #define CMD_BUFFER_DIM (NUM_TRABALHADORAS * 2)  /*dimensao do buffer circular*/
+
+#define COMANDO_DEBITAR "debitar"
+#define COMANDO_CREDITAR "creditar"
+#define COMANDO_LER_SALDO "lerSaldo"
+#define COMANDO_SIMULAR "simular"
+#define COMANDO_SAIR "sair"
 
 #define OP_LERSALDO 0
 #define OP_CREDITAR 1
@@ -39,6 +48,10 @@ typedef struct  {
 comando_t cmdbuffer[CMD_BUFFER_DIM];
 
 
+pthread_mutex_t cadeadoC;
+
+sem_t escrita;
+sem_t leitura;
 
 void inicializarContas();
 int contaExiste(int idConta);
@@ -48,9 +61,10 @@ int lerSaldo(int idConta);
 void simular(int numAnos);
 void handler(int sig);
 comando_t produzir(int op, int id, int val);
-void *thr_consumer (void *item);
-comando_t *get();
-int consume(comando_t *item);
+void writeBuf(comando_t item);
+void* thr_consumer(void *arg);
+comando_t get();
+int consume(comando_t item);
 
 
 #endif

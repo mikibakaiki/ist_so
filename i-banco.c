@@ -22,11 +22,11 @@
 #include <pthread.h>
 #include <semaphore.h>
 
-#define COMANDO_DEBITAR "debitar"
+/*#define COMANDO_DEBITAR "debitar"
 #define COMANDO_CREDITAR "creditar"
 #define COMANDO_LER_SALDO "lerSaldo"
 #define COMANDO_SIMULAR "simular"
-#define COMANDO_SAIR "sair"
+#define COMANDO_SAIR "sair"*/
 
 
 #define MAXARGS 3
@@ -37,6 +37,9 @@
 
 
 
+
+
+
 int main (int argc, char** argv)  {
 
     char *args[MAXARGS + 1];
@@ -44,10 +47,31 @@ int main (int argc, char** argv)  {
     char buffer[BUFFER_SIZE];
 
     inicializarContas();
-    
-    pthread_t tid[NUM_TRABALHADORAS];
 
-    int t, rc;
+    int rc, t;
+    
+    if ((rc = pthread_mutex_init(&cadeadoC, NULL)) != 0)  {
+
+        errno = rc;
+        perror("pthread_mutex_init: ");
+        exit(EXIT_FAILURE);
+    }
+    
+ 	if (sem_init(&escrita, 1, CMD_BUFFER_DIM) == -1)  {
+
+     	perror("sem_init: ");
+
+     	exit(EXIT_FAILURE);
+ 	}
+
+    if (sem_init(&leitura, 1, 0) == -1)  {
+     	
+     	perror("sem_init: ");
+
+     	exit(EXIT_FAILURE);
+    }
+
+    pthread_t tid[NUM_TRABALHADORAS];
 
     for(t = 0; t < NUM_TRABALHADORAS; t++)  {
 
@@ -55,10 +79,11 @@ int main (int argc, char** argv)  {
 
         if(rc != 0)  {
         	errno = rc;
-        	perror("pthread_create");
+        	perror("pthread_create: ");
         	exit(EXIT_FAILURE);
         }
     }
+
 
 
     printf("Bem-vinda/o ao i-banco\n\n");
@@ -76,40 +101,49 @@ int main (int argc, char** argv)  {
 
         /* EOF (end of file) do stdin ou comando "sair" */
 
-        if  (numargs < 0 ||
-            (numargs > 0 &&
-            (strcmp(args[0], COMANDO_SAIR) == 0) || 
-            (numargs > 1 && (strcmp(args[0], COMANDO_SAIR) == 0) && strcmp(args[1], "agora") == 0)))  {
+        if  ((numargs < 0) ||
+             (numargs > 0 &&
+             (strcmp(args[0], COMANDO_SAIR) == 0)) ||
+             ((numargs > 1) && (strcmp(args[0], COMANDO_SAIR) == 0) && (strcmp(args[1], "agora") == 0)))  {
 
+        	printf("i-banco vai terminar.\n--\n");
 
         	int i;
-
         	comando_t input;
 
-            input = produzir(OP_SAIR, -1, -1);
+        	for(i = 0; i < NUM_TRABALHADORAS; i++)  {
+        		
+
+            	input = produzir(OP_SAIR, -1, -1);
      
-            put(input);
+            	writeBuf(input);
+            }
 
         	for(i = 0; i < NUM_TRABALHADORAS; i++)  {
 
-        		pthread_join(tid[i], NULL);
+        		rc = pthread_join(tid[i], NULL);
+
+        		if(rc != 0)  {
+
+        			errno = rc;
+        			perror("pthread_join: ");
+        			exit(EXIT_FAILURE);
+        		}
         	}
           	
             /* A funcao kill() envia um signal a todos os processos, incluindo o processo pai.*/
 
             /*kill(0, SIGUSR1);*/
             
-            int estado;
+            /*int estado;
             pid_t test;
-
-            printf("i-banco vai terminar.\n--\n");
-
+            
             while (1)  {
 
-                /* A funcao wait() aguarda que um processo filho termine. 
+                 * A funcao wait() aguarda que um processo filho termine. 
                  * Em caso de sucesso, devolve o PID do processo filho terminado.
                  * Em caso de erro, devolve -1 e devolve para a variavel errno o codigo do erro.  
-                 * O erro ECHILD ocorre quando ja nao ha mais processos filho.*/
+                 * O erro ECHILD ocorre quando ja nao ha mais processos filho.*
 
                 test = wait(&estado);
 
@@ -125,7 +159,7 @@ int main (int argc, char** argv)  {
                 if (WIFSIGNALED(estado) != 0)
 
                     printf("FILHO TERMINADO (PID=%d; terminou abruptamente)\n", test);
-            }
+            }*/
 
             printf("--\ni-banco terminou.\n");
                
@@ -153,9 +187,9 @@ int main (int argc, char** argv)  {
 
             comando_t input;
 
-            input = produzir(OP_DEBITAR, args[1], args[2]);
+            input = produzir(OP_DEBITAR, atoi(args[1]), atoi(args[2]));
 
-            put(input);
+            writeBuf(input);
         }
 
         /* Creditar */
@@ -171,9 +205,9 @@ int main (int argc, char** argv)  {
 
             comando_t input;
 
-            input = produzir(OP_CREDITAR, args[1], args[2]);
+            input = produzir(OP_CREDITAR, atoi(args[1]), atoi(args[2]));
 
-            put(input);
+            writeBuf(input);
 
         }
 
@@ -190,9 +224,9 @@ int main (int argc, char** argv)  {
 
             comando_t input;
 
-            input = produzir(OP_LERSALDO, args[1], -1);
+            input = produzir(OP_LERSALDO, atoi(args[1]), -1);
 
-            put(input);
+            writeBuf(input);
         }
 
         /* Simular */

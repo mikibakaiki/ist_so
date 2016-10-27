@@ -17,6 +17,8 @@
 #include <signal.h>
 #include <pthread.h>
 #include <semaphore.h>
+#include <errno.h>
+
 
 #define atrasar() sleep(ATRASO)
 
@@ -26,19 +28,6 @@
 int contasSaldos[NUM_CONTAS];
 
 int buff_write_idx = 0, buff_read_idx = 0;
-
-pthread_mutex_t mutexC;
-pthread_mutex_init(&mutexC, NULL);
-
-pthread_mutex_t mutexP;
-pthread_mutex_init(&mutexP, NULL);
-
-sem_t read;
-sem_init(&read, 1, 0);
-
-sem_t write;
-sem_init(&write, 1, CMD_BUFFER_DIM);
-
 
 
 /* Flag para verificar signals.*/
@@ -173,6 +162,7 @@ void handler(int sig)  {
 }
 
 
+
 /*************************/
 /*       PARTE 2         */
 /*************************/
@@ -185,29 +175,24 @@ comando_t produzir(int op, int id, int val)  {
   i.operacao = op;
   i.idConta = id;
   i.valor = val;
-  /*Damos free no final de usarmos cada ponteiro ou depois de usarmos todos ?! */
 
   return i;
 }
 
 
-void put(comando_t item)  {
+void writeBuf(comando_t item)  {
 
-	sem_wait(&write);
-
-	pthread_mutex_lock(&mutexP);
+	sem_wait(&escrita);
 
 	cmdbuffer[buff_write_idx] = item;
 
 	buff_write_idx = (buff_write_idx + 1) % CMD_BUFFER_DIM;
 
-	pthread_mutex_unlock(&mutexP);
-
-	sem_post(&read);
+	sem_post(&leitura);
 }
 
 
-void *thr_consumer (void *) {
+void* thr_consumer (void *arg) {
 
 	int x;
 
@@ -221,7 +206,7 @@ void *thr_consumer (void *) {
 
 		if (x == 1)
 			
-			break;
+			pthread_exit(EXIT_SUCCESS);
   	}
 
   	return NULL;
@@ -230,9 +215,9 @@ void *thr_consumer (void *) {
 
 comando_t get()  {
 
-  	sem_wait(&read);
+  	sem_wait(&leitura);
 
-  	pthread_mutex_lock(&mutexC);
+  	pthread_mutex_lock(&cadeadoC);
 
   	comando_t item;
 
@@ -240,9 +225,9 @@ comando_t get()  {
 
   	buff_read_idx = (buff_read_idx + 1) % CMD_BUFFER_DIM;
 
-  	pthread_mutex_unlock(&mutexC);
+  	pthread_mutex_unlock(&cadeadoC);
 
-	sem_post(&write);
+	sem_post(&escrita);
 
 	return item;
 }
