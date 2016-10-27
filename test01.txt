@@ -1,15 +1,47 @@
-creditar 1 100
 
 debitar 1 10
+debitar 2 10
+debitar 3 10
 
-creditar 1 100
 
-debitar 1 10
 
-creditar 1 100
+debitar 1 0
+debitar 2 0
+debitar 3 0
 
-debitar 1 10
+
 
 lerSaldo 1
+lerSaldo 2
+lerSaldo 3
 
-sair
+creditar 1 100
+debitar 1 10
+lerSaldo 1
+
+
+
+creditar 2 10
+debitar 2 1
+lerSaldo 2
+
+
+
+creditar 3 500
+debitar 3 100
+lerSaldo 3
+
+
+
+debitar 3 400
+debitar 1 90
+debitar 2 9
+
+
+
+lerSaldo 2
+lerSaldo 1
+lerSaldo 3
+
+
+sair agora

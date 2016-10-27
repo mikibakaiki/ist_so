@@ -49,14 +49,17 @@ int contaExiste(int idConta)  {
 
 void inicializarContas()  {
 
-  	int i;
+  	int i, rc;
 
   	for (i=0; i<NUM_CONTAS; i++)  {
 
 		contasSaldos[i] = 0;
 
-		pthread_mutex_init(&mutexContas[i], NULL);
+  		if ((rc = pthread_mutex_init(&mutexContas[i], NULL)) != 0)  {
 
+        	errno = rc;
+        	perror("pthread_mutex_init: ");
+		}
 	}
 }
 
@@ -65,16 +68,15 @@ int debitar(int idConta, int valor)  {
 
   	atrasar();
 
-
   	if (!contaExiste(idConta))
 
 		return -1;
 
-	pthread_mutex_lock(&mutexContas[idConta - 1]);
+	testMutexLock(&mutexContas[idConta - 1]);
 
   	if (contasSaldos[idConta - 1] < valor)  {
 
-		pthread_mutex_unlock(&mutexContas[idConta - 1]);
+		testMutexUnlock(&mutexContas[idConta - 1]);
 		
 		return -1;
 	}
@@ -83,7 +85,7 @@ int debitar(int idConta, int valor)  {
 
   	contasSaldos[idConta - 1] -= valor;
 
-  	pthread_mutex_unlock(&mutexContas[idConta - 1]);
+  	testMutexUnlock(&mutexContas[idConta - 1]);
 
   	return 0;
 }
@@ -97,11 +99,11 @@ int creditar(int idConta, int valor)  {
 
 		return -1;
 
-	pthread_mutex_lock(&mutexContas[idConta - 1]);
+	testMutexLock(&mutexContas[idConta - 1]);
 
   	contasSaldos[idConta - 1] += valor;
 
-  	pthread_mutex_unlock(&mutexContas[idConta - 1]);
+  	testMutexUnlock(&mutexContas[idConta - 1]);
 
   	return 0;
 }
@@ -117,11 +119,11 @@ int lerSaldo(int idConta)  {
 
 		return -1;
 
-	pthread_mutex_lock(&mutexContas[idConta - 1]);
+	testMutexLock(&mutexContas[idConta - 1]);
 
 	i = contasSaldos[idConta - 1];
 
-	pthread_mutex_unlock(&mutexContas[idConta - 1]);
+	testMutexUnlock(&mutexContas[idConta - 1]);
 
 	return i;
 }
@@ -194,6 +196,7 @@ void handler(int sig)  {
 /*       PARTE 2         */
 /*************************/
 
+/* Funcao que recebe os 3 argumentos iniciais e os coloca na estrutura comando_t, retornando-a. */
 
 comando_t produzir(int op, int id, int val)  {
 
@@ -207,6 +210,8 @@ comando_t produzir(int op, int id, int val)  {
 }
 
 
+/* Funcao que recebe uma estrutura e a coloca no buffer circular. */
+
 void writeBuf(comando_t item)  {
 
 	testSemWait(&escrita);
@@ -218,6 +223,7 @@ void writeBuf(comando_t item)  {
 	testSemPost(&leitura);
 }
 
+/* Funcao a ser executada em cada uma das threads consumidoras. */
 
 void* thr_consumer (void *arg) {
 
@@ -234,6 +240,7 @@ void* thr_consumer (void *arg) {
   	return NULL;
 }
 
+/* Funcao que retira uma estrutura comando_t do buffer circular e devolve-a. */
 
 comando_t readBuf()  {
 
@@ -255,11 +262,14 @@ comando_t readBuf()  {
 }
 
 
+/* Funcao que analisa a estrutura recebida e executa o comando respectivo. */
+
 int consume(comando_t item)  {
 
 	int saldo;
 
 	if (item.operacao == OP_LERSALDO)  {
+
 		saldo = lerSaldo(item.idConta);
 
 		if (saldo < 0)
@@ -272,6 +282,7 @@ int consume(comando_t item)  {
 	}
 
 	if (item.operacao == OP_CREDITAR)  {
+
 		if (creditar (item.idConta, item.valor) < 0)
 
             printf("%s(%d, %d): Erro\n\n", COMANDO_CREDITAR, item.idConta, item.valor);
@@ -301,7 +312,8 @@ int consume(comando_t item)  {
 	return 0;
 }
 
-
+/* Funcao testMutexLock verifica se e possivel trancar o mutex, atraves da funcao pthread_mutex_lock(). 
+ * Retorna 0 em caso afirmativo e resulta em erro caso contrario. */
 
 int testMutexLock(pthread_mutex_t *cadeado)  {
 
@@ -317,6 +329,9 @@ int testMutexLock(pthread_mutex_t *cadeado)  {
 	return 0;
 }
 
+/* Funcao testMutexUnlock verifica se e possivel destrancar o mutex, atraves da funcao pthread_mutex_unlock(). 
+ * Retorna 0 em caso afirmativo e resulta em erro caso contrario. */
+
 int testMutexUnlock(pthread_mutex_t *cadeado)  {
 
 	int i;
@@ -331,6 +346,9 @@ int testMutexUnlock(pthread_mutex_t *cadeado)  {
 	return 0;
 }
 
+/* Funcao testSemWait verifica se e possivel fechar o semaforo, atraves da funcao sem_wait(). 
+ * Retorna 0 em caso afirmativo e resulta em erro caso contrario. */
+
 int testSemWait(sem_t *semaforo)  {
 
 	if(sem_wait(semaforo) != 0)  {
@@ -340,6 +358,9 @@ int testSemWait(sem_t *semaforo)  {
 
 	return 0;
 }
+
+/* Funcao testSemPost verifica se e possivel abrir o semaforo, atraves da funcao sem_post(). 
+ * Retorna 0 em caso afirmativo e resulta em erro caso contrario. */
 
 int testSemPost(sem_t *semaforo)  {
 

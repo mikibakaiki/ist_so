@@ -51,21 +51,17 @@ int main (int argc, char** argv)  {
 
         errno = rc;
         perror("pthread_mutex_init: ");
-        exit(EXIT_FAILURE);
     }
     
  	if (sem_init(&escrita, 1, CMD_BUFFER_DIM) == -1)  {
 
      	perror("sem_init: ");
 
-     	exit(EXIT_FAILURE);
  	}
 
     if (sem_init(&leitura, 1, 0) == -1)  {
      	
      	perror("sem_init: ");
-
-     	exit(EXIT_FAILURE);
     }
 
     pthread_t tid[NUM_TRABALHADORAS];
@@ -119,10 +115,8 @@ int main (int argc, char** argv)  {
             }
 
         	for(i = 0; i < NUM_TRABALHADORAS; i++)  {
-
-        		rc = pthread_join(tid[i], NULL);
-
-        		if(rc != 0)  {
+        		
+        		if((rc = pthread_join(tid[i], NULL)) != 0)  {
 
         			errno = rc;
 
