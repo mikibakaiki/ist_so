@@ -63,7 +63,7 @@ void handler(int sig);
 comando_t produzir(int op, int id, int val);
 void writeBuf(comando_t item);
 void* thr_consumer(void *arg);
-comando_t get();
+comando_t readBuf();
 int consume(comando_t item);
 int testMutexLock(pthread_mutex_t *cadeado);
 int testMutexUnlock(pthread_mutex_t *cadeado);

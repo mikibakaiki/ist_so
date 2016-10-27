@@ -1,7 +1,15 @@
 creditar 1 100
+
+debitar 1 10
+
 creditar 1 100
+
+debitar 1 10
+
 creditar 1 100
+
 debitar 1 10
-debitar 1 10
-debitar 1 10
+
 lerSaldo 1
+
+sair

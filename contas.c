@@ -34,43 +34,58 @@ int buff_write_idx = 0, buff_read_idx = 0;
 
 int sig_find = 0;
 
+pthread_mutex_t mutexContas[NUM_CONTAS];
+
+
 
 /***   FUNCOES   ***/
 
 
 int contaExiste(int idConta)  {
 
-  return (idConta > 0 && idConta <= NUM_CONTAS);
+  	return (idConta > 0 && idConta <= NUM_CONTAS);
 }
 
 
 void inicializarContas()  {
 
-  int i;
+  	int i;
 
-  for (i=0; i<NUM_CONTAS; i++)
+  	for (i=0; i<NUM_CONTAS; i++)  {
 
-	contasSaldos[i] = 0;
+		contasSaldos[i] = 0;
+
+		pthread_mutex_init(&mutexContas[i], NULL);
+
+	}
 }
 
 
 int debitar(int idConta, int valor)  {
 
-  atrasar();
+  	atrasar();
 
-  if (!contaExiste(idConta))
 
-	return -1;
+  	if (!contaExiste(idConta))
 
-  if (contasSaldos[idConta - 1] < valor)
+		return -1;
 
-	return -1;
+	pthread_mutex_lock(&mutexContas[idConta - 1]);
 
-  atrasar();
+  	if (contasSaldos[idConta - 1] < valor)  {
 
-  contasSaldos[idConta - 1] -= valor;
+		pthread_mutex_unlock(&mutexContas[idConta - 1]);
+		
+		return -1;
+	}
 
-  return 0;
+  	atrasar();
+
+  	contasSaldos[idConta - 1] -= valor;
+
+  	pthread_mutex_unlock(&mutexContas[idConta - 1]);
+
+  	return 0;
 }
 
 
@@ -82,7 +97,11 @@ int creditar(int idConta, int valor)  {
 
 		return -1;
 
+	pthread_mutex_lock(&mutexContas[idConta - 1]);
+
   	contasSaldos[idConta - 1] += valor;
+
+  	pthread_mutex_unlock(&mutexContas[idConta - 1]);
 
   	return 0;
 }
@@ -90,13 +109,21 @@ int creditar(int idConta, int valor)  {
 
 int lerSaldo(int idConta)  {
 
+	int i;
+
 	atrasar();
 
 	if (!contaExiste(idConta))
 
 		return -1;
 
-	return contasSaldos[idConta - 1];
+	pthread_mutex_lock(&mutexContas[idConta - 1]);
+
+	i = contasSaldos[idConta - 1];
+
+	pthread_mutex_unlock(&mutexContas[idConta - 1]);
+
+	return i;
 }
 
 
@@ -170,13 +197,13 @@ void handler(int sig)  {
 
 comando_t produzir(int op, int id, int val)  {
 
-  comando_t i;
+  	comando_t i;
 
-  i.operacao = op;
-  i.idConta = id;
-  i.valor = val;
+  	i.operacao = op;
+  	i.idConta = id;
+  	i.valor = val;
 
-  return i;
+  	return i;
 }
 
 
@@ -194,26 +221,21 @@ void writeBuf(comando_t item)  {
 
 void* thr_consumer (void *arg) {
 
-	int x;
-
   	while(1)  {
 
 		comando_t item;
 
-		item = get();
+		item = readBuf();
 
-		x = consume(item);
-
-		if (x == 1)
+		consume(item);
 			
-			pthread_exit(EXIT_SUCCESS);
   	}
 
   	return NULL;
 }
 
 
-comando_t get()  {
+comando_t readBuf()  {
 
   	testSemWait(&leitura);
 
@@ -238,10 +260,7 @@ int consume(comando_t item)  {
 	int saldo;
 
 	if (item.operacao == OP_LERSALDO)  {
-
 		saldo = lerSaldo(item.idConta);
-
-		/*mutex*/
 
 		if (saldo < 0)
 
@@ -253,9 +272,6 @@ int consume(comando_t item)  {
 	}
 
 	if (item.operacao == OP_CREDITAR)  {
-
-		/*mutex*/
-
 		if (creditar (item.idConta, item.valor) < 0)
 
             printf("%s(%d, %d): Erro\n\n", COMANDO_CREDITAR, item.idConta, item.valor);
@@ -266,9 +282,7 @@ int consume(comando_t item)  {
 	}
 
 	if (item.operacao == OP_DEBITAR)  {
-
-		/*mutex*/
-
+		
 		if (debitar (item.idConta, item.valor) < 0)
 
             printf("%s(%d, %d): Erro\n\n", COMANDO_DEBITAR, item.idConta, item.valor);
@@ -281,7 +295,7 @@ int consume(comando_t item)  {
 
 	if (item.operacao == OP_SAIR)  {
 
-		return 1;
+		pthread_exit(EXIT_SUCCESS);
 	}
 
 	return 0;
@@ -302,7 +316,6 @@ int testMutexLock(pthread_mutex_t *cadeado)  {
 
 	return 0;
 }
-
 
 int testMutexUnlock(pthread_mutex_t *cadeado)  {
 
