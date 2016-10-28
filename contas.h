@@ -53,6 +53,9 @@ pthread_mutex_t cadeadoC;
 sem_t escrita;
 sem_t leitura;
 
+int contasSaldos[NUM_CONTAS];
+
+
 void inicializarContas();
 int contaExiste(int idConta);
 int debitar(int idConta, int valor);
