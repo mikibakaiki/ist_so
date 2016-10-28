@@ -373,6 +373,9 @@ int testSemPost(sem_t *semaforo)  {
 	return 0;
 }
 
+/* Funcao testSemDestroy verifica se e possivel destruir o semaforo, atraves da funcao sem_destroy(). 
+ * Retorna 0 em caso afirmativo e resulta em erro caso contrario. */
+
 int testSemDestroy(sem_t *semaforo)  {
 
 	if(sem_destroy(semaforo) != 0)  {
@@ -382,6 +385,9 @@ int testSemDestroy(sem_t *semaforo)  {
 
 	return 0;
 }
+
+/* Funcao testMutexDestroy verifica se e possivel destruir o mutex, atraves da funcao pthread_mutex_destroy(). 
+ * Retorna 0 em caso afirmativo e resulta em erro caso contrario. */
 
 int testMutexDestroy(pthread_mutex_t *cadeado)  {
 
