@@ -25,7 +25,6 @@
 
 /***   CONSTANTES   ***/ 
 
-int contasSaldos[NUM_CONTAS];
 
 int buff_write_idx = 0, buff_read_idx = 0;
 
@@ -203,7 +202,9 @@ comando_t produzir(int op, int id, int val)  {
   	comando_t i;
 
   	i.operacao = op;
+
   	i.idConta = id;
+  	
   	i.valor = val;
 
   	return i;

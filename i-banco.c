@@ -45,6 +45,7 @@ int main (int argc, char** argv)  {
     if ((rc = pthread_mutex_init(&cadeadoC, NULL)) != 0)  {
 
         errno = rc;
+
         perror("pthread_mutex_init: ");
     }
     
@@ -66,12 +67,14 @@ int main (int argc, char** argv)  {
         rc = pthread_create(&tid[t], NULL, thr_consumer, NULL);
 
         if(rc != 0)  {
+
         	errno = rc;
+
         	perror("pthread_create: ");
+
         	exit(EXIT_FAILURE);
         }
     }
-
 
 
     printf("Bem-vinda/o ao i-banco\n\n");
@@ -94,13 +97,11 @@ int main (int argc, char** argv)  {
              (strcmp(args[0], COMANDO_SAIR) == 0)) ||
              ((numargs > 1) && (strcmp(args[0], COMANDO_SAIR) == 0) && (strcmp(args[1], "agora") == 0)))  {
 
-			sleep(5);
         	printf("i-banco vai terminar.\n--\n");
 
         	int i;
-        	comando_t input;
 
-        	
+        	comando_t input;
 
         	for(i = 0; i < NUM_TRABALHADORAS; i++)  {
         		
@@ -119,6 +120,7 @@ int main (int argc, char** argv)  {
 
         			exit(EXIT_FAILURE);
         		}
+
         	}
           	
             /* A funcao kill() envia um signal a todos os processos, incluindo o processo pai.*/
@@ -150,6 +152,8 @@ int main (int argc, char** argv)  {
 
                     printf("FILHO TERMINADO (PID=%d; terminou abruptamente)\n", test);
             }*/
+
+            int x;
 
             printf("--\ni-banco terminou.\n");
                
@@ -224,6 +228,7 @@ int main (int argc, char** argv)  {
         else if (strcmp(args[0], COMANDO_SIMULAR) == 0)  {
 
             int numAnos;
+            
             int pid;
 
             if (numargs < 2)  {
