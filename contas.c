@@ -318,11 +318,11 @@ int consume(comando_t item)  {
 
 int testMutexLock(pthread_mutex_t *cadeado)  {
 
-	int i;
+	int rc;
 
-	if((i = pthread_mutex_lock(cadeado)) != 0)  {
+	if((rc = pthread_mutex_lock(cadeado)) != 0)  {
 
-		errno = i;
+		errno = rc;
 
 		perror("pthread_mutex_lock: ");
 	}
@@ -335,11 +335,11 @@ int testMutexLock(pthread_mutex_t *cadeado)  {
 
 int testMutexUnlock(pthread_mutex_t *cadeado)  {
 
-	int i;
+	int rc;
 
-	if((i = pthread_mutex_unlock(cadeado)) != 0)  {
+	if((rc = pthread_mutex_unlock(cadeado)) != 0)  {
 
-		errno = i;
+		errno = rc;
 
 		perror("pthread_mutex_unlock: ");
 	}
@@ -368,6 +368,30 @@ int testSemPost(sem_t *semaforo)  {
 	if(sem_post(semaforo) != 0)  {
 
 		perror("sem_post: ");
+	}
+
+	return 0;
+}
+
+int testSemDestroy(sem_t *semaforo)  {
+
+	if(sem_destroy(semaforo) != 0)  {
+
+		perror("sem_destroy: ");
+	}
+
+	return 0;
+}
+
+int testMutexDestroy(pthread_mutex_t *cadeado)  {
+
+	int rc;
+
+	if((rc = pthread_mutex_destroy(cadeado)) != 0)  {
+
+		errno = rc;
+
+		perror("pthread_mutex_destroy: ");
 	}
 
 	return 0;

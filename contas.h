@@ -63,17 +63,27 @@ int creditar(int idConta, int valor);
 int lerSaldo(int idConta);
 void simular(int numAnos);
 void handler(int sig);
+
+
+
+/***   PARTE 2   ***/
+
+
 comando_t produzir(int op, int id, int val);
 void writeBuf(comando_t item);
 void* thr_consumer(void *arg);
 comando_t readBuf();
 int consume(comando_t item);
+
+
 int testMutexLock(pthread_mutex_t *cadeado);
 int testMutexUnlock(pthread_mutex_t *cadeado);
+
 int testSemWait(sem_t *semaforo);
 int testSemPost(sem_t *semaforo);
 
-
+int testSemDestroy(sem_t *semaforo);
+int testMutexDestroy(pthread_mutex_t *cadeado);
 
 
 
