@@ -153,9 +153,12 @@ int main (int argc, char** argv)  {
                     printf("FILHO TERMINADO (PID=%d; terminou abruptamente)\n", test);
             }*/
 
-            int x;
 
             printf("--\ni-banco terminou.\n");
+            
+            testMutexDestroy(&cadeadoC);
+            testSemDestroy(&escrita);
+            testSemDestroy(&leitura);
                
             exit(EXIT_SUCCESS);
         }
