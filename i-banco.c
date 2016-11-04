@@ -226,6 +226,17 @@ int main (int argc, char** argv)  {
             writeBuf(input);
         }
 
+
+        else if (strcmp(args[0], COMANDO_TRANSFERIR) == 0)  {
+
+            if (numargs < 3)  {
+
+                printf("%s: Sintaxe inválida, tente de novo.\n", COMANDO_LER_SALDO);
+
+                continue;
+            }
+
+
         /* Simular */
 
         else if (strcmp(args[0], COMANDO_SIMULAR) == 0)  {

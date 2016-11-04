@@ -29,12 +29,14 @@
 #define COMANDO_LER_SALDO "lerSaldo"
 #define COMANDO_SIMULAR "simular"
 #define COMANDO_SAIR "sair"
+#define COMANDO_TRANSFERIR "transferir"
 
 #define OP_LERSALDO 0
 #define OP_CREDITAR 1
 #define OP_DEBITAR 2
 #define OP_SAIR 3
-#define OP_SAIR_AGORA 3
+#define OP_SAIR_AGORA 4
+#define OP_TRANSFERIR 5
 
 
 typedef struct  {
@@ -42,6 +44,7 @@ typedef struct  {
 	int operacao;
 	int idConta;
 	int valor;
+	int idContaDestino;
 	
 } comando_t;
 
