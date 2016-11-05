@@ -24,7 +24,7 @@
 
 
 
-#define MAXARGS 3
+#define MAXARGS 4
 #define BUFFER_SIZE 100
 
 #define NUM_TRABALHADORAS 3  /*numero de threads*/
@@ -105,7 +105,7 @@ int main (int argc, char** argv)  {
 
         	for(i = 0; i < NUM_TRABALHADORAS; i++)  {
         		
-            	input = produzir(OP_SAIR, -1, -1);
+            	input = produzir(OP_SAIR, -1, -1, -1);
      
             	writeBuf(input);
             }
@@ -154,13 +154,16 @@ int main (int argc, char** argv)  {
             }*/
 
 
-            printf("--\ni-banco terminou.\n");
+            
+           	printf("--\ni-banco terminou.\n");
+            
             for (i=0; i<NUM_CONTAS; i++)  {
 
   				testMutexDestroy(&mutexContas[i]);
 			}
-			
+
             testMutexDestroy(&cadeadoC);
+            testMutexDestroy(&mutexTransf);
             testSemDestroy(&escrita);
             testSemDestroy(&leitura);
                
@@ -233,7 +236,7 @@ int main (int argc, char** argv)  {
         /* Transferir */
 
         else if (strcmp(args[0], COMANDO_TRANSFERIR) == 0)  {
-
+        	
             if (numargs < 3)  {
 
                 printf("%s: Sintaxe inválida, tente de novo.\n", COMANDO_LER_SALDO);

@@ -52,6 +52,8 @@ comando_t cmdbuffer[CMD_BUFFER_DIM];
 
 
 pthread_mutex_t cadeadoC;
+pthread_mutex_t mutexContas[NUM_CONTAS];
+pthread_mutex_t mutexTransf;
 
 sem_t escrita;
 sem_t leitura;
@@ -67,12 +69,14 @@ int lerSaldo(int idConta);
 void simular(int numAnos);
 void handler(int sig);
 
+int transferir(int idConta, int idContaDest, int valor);
+
 
 
 /***   PARTE 2   ***/
 
 
-comando_t produzir(int op, int id, int val);
+comando_t produzir(int op, int idOri, int val, int idDest);
 void writeBuf(comando_t item);
 void* thr_consumer(void *arg);
 comando_t readBuf();
