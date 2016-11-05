@@ -34,6 +34,7 @@ int buff_write_idx = 0, buff_read_idx = 0;
 int sig_find = 0;
 
 pthread_mutex_t mutexContas[NUM_CONTAS];
+pthread_mutex_t mutexTransf;
 
 
 
@@ -57,9 +58,17 @@ void inicializarContas()  {
   		if ((rc = pthread_mutex_init(&mutexContas[i], NULL)) != 0)  {
 
         	errno = rc;
+
         	perror("pthread_mutex_init: ");
 		}
 	}
+
+  	if ((rc = pthread_mutex_init(&mutexTransf, NULL)) != 0)  {
+
+		errno = rc;
+
+    	perror("pthread_mutex_init: ");
+    }
 }
 
 
@@ -67,7 +76,7 @@ int debitar(int idConta, int valor)  {
 
   	atrasar();
 
-  	if (!contaExiste(idConta))
+  	if (!contaExiste(idConta) || valor < 0)
 
 		return -1;
 
@@ -94,7 +103,7 @@ int creditar(int idConta, int valor)  {
 
   	atrasar();
 
-  	if (!contaExiste(idConta))
+  	if (!contaExiste(idConta) || valor < 0)
 
 		return -1;
 
@@ -189,6 +198,25 @@ void handler(int sig)  {
 	signal(sig, handler);
 }
 
+int transferir(int idConta, int idContaDest, int valor)  {
+
+	atrasar();
+
+	if (!contaExiste(idConta) || !contaExiste(idContaDest) || idConta == idContaDest)
+
+		return -1;
+
+	testMutexLock(&mutexTransf);
+
+	debitar(idConta, valor);
+
+	creditar(idContaDest, valor);
+
+	testMutexUnlock(&mutexTransf);
+
+	return 0;
+}
+
 
 
 /*************************/
@@ -197,15 +225,31 @@ void handler(int sig)  {
 
 /* Funcao que recebe os 3 argumentos iniciais e os coloca na estrutura comando_t, retornando-a. */
 
-comando_t produzir(int op, int id, int val)  {
+comando_t produzir(int op, int idOri, int val, int idDest)  {
 
   	comando_t i;
 
-  	i.operacao = op;
+  	if(op <= OP_SAIR_AGORA)  {
 
-  	i.idConta = id;
-  	
-  	i.valor = val;
+	  	i.operacao = op;
+
+	  	i.idConta = idOri;
+	  	
+	  	i.valor = val;
+
+	  	i.idContaDestino = idDest;
+	}
+
+	else  {
+
+		i.operacao = op;
+
+		i.idConta = idOri;
+
+		i.valor = idDest;
+
+		i.idContaDestino = val;
+	}
 
   	return i;
 }
@@ -303,6 +347,14 @@ int consume(comando_t item)  {
 
             printf("%s(%d, %d): OK\n\n", COMANDO_DEBITAR, item.idConta, item.valor);
 		
+	}
+
+	if (item.operacao == OP_TRANSFERIR)  {
+		if (item.idConta == item.idContaDestino)
+
+			printf("Erro ao transferir valor da conta %d para a conta %d", item.idConta, item.idContaDestino);
+
+
 	}
 
 	if (item.operacao == OP_SAIR)  {
