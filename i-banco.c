@@ -155,7 +155,11 @@ int main (int argc, char** argv)  {
 
 
             printf("--\ni-banco terminou.\n");
-            
+            for (i=0; i<NUM_CONTAS; i++)  {
+
+  				testMutexDestroy(&mutexContas[i]);
+			}
+			
             testMutexDestroy(&cadeadoC);
             testSemDestroy(&escrita);
             testSemDestroy(&leitura);
@@ -184,7 +188,7 @@ int main (int argc, char** argv)  {
 
             comando_t input;
 
-            input = produzir(OP_DEBITAR, atoi(args[1]), atoi(args[2]));
+            input = produzir(OP_DEBITAR, atoi(args[1]), atoi(args[2]), -1);
 
             writeBuf(input);
         }
@@ -202,7 +206,7 @@ int main (int argc, char** argv)  {
 
             comando_t input;
 
-            input = produzir(OP_CREDITAR, atoi(args[1]), atoi(args[2]));
+            input = produzir(OP_CREDITAR, atoi(args[1]), atoi(args[2]), -1);
 
             writeBuf(input);
 
@@ -221,11 +225,12 @@ int main (int argc, char** argv)  {
 
             comando_t input;
 
-            input = produzir(OP_LERSALDO, atoi(args[1]), -1);
+            input = produzir(OP_LERSALDO, atoi(args[1]), -1, -1);
 
             writeBuf(input);
         }
 
+        /* Transferir */
 
         else if (strcmp(args[0], COMANDO_TRANSFERIR) == 0)  {
 
@@ -235,6 +240,13 @@ int main (int argc, char** argv)  {
 
                 continue;
             }
+
+            comando_t input;
+
+            input = produzir(OP_TRANSFERIR, atoi(args[1]), atoi(args[2]), atoi(args[3]));
+
+            writeBuf(input);
+        }
 
 
         /* Simular */
