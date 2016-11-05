@@ -200,7 +200,6 @@ void handler(int sig)  {
 
 int transferir(int idConta, int idContaDest, int valor)  {
 
-	atrasar();
 
 	if (!contaExiste(idConta) || !contaExiste(idContaDest) || idConta == idContaDest)
 
@@ -208,9 +207,19 @@ int transferir(int idConta, int idContaDest, int valor)  {
 
 	testMutexLock(&mutexTransf);
 
-	debitar(idConta, valor);
+	if ( debitar(idConta, valor) !=0)  {
 
-	creditar(idContaDest, valor);
+		testMutexUnlock(&mutexTransf);
+
+		return -1;
+	}
+
+	if ( creditar(idContaDest, valor) != 0)  {
+
+		testMutexUnlock(&mutexTransf);
+
+		return -1;
+	}
 
 	testMutexUnlock(&mutexTransf);
 
@@ -229,7 +238,7 @@ comando_t produzir(int op, int idOri, int val, int idDest)  {
 
   	comando_t i;
 
-  	if(op <= OP_SAIR_AGORA)  {
+  	if (op <= OP_SAIR_AGORA)  {
 
 	  	i.operacao = op;
 
@@ -350,10 +359,14 @@ int consume(comando_t item)  {
 	}
 
 	if (item.operacao == OP_TRANSFERIR)  {
-		if (item.idConta == item.idContaDestino)
+		
+		if ( (transferir(item.idConta, item.idContaDestino, item.valor) != 0) )
 
-			printf("Erro ao transferir valor da conta %d para a conta %d", item.idConta, item.idContaDestino);
+			printf("Erro ao transferir valor da conta %d para a conta %d\n\n", item.idConta, item.idContaDestino);
+		
+		else
 
+			printf("transferir(%d, %d, %d): OK\n\n", item.idConta, item.idContaDestino, item.valor);
 
 	}
 
