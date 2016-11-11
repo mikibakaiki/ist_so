@@ -60,7 +60,7 @@ sem_t escrita;
 sem_t leitura;
 
 
-int count;  /*numero de tarefas por executar */
+int count;  /* Numero de comandos por executar. */
 
 int contasSaldos[NUM_CONTAS];
 

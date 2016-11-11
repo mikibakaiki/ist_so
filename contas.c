@@ -29,7 +29,7 @@
 int buff_write_idx = 0, buff_read_idx = 0, count = 0;
 
 
-/* Flag para verificar signals.*/
+/* Flag para verificar signals. */
 
 int sig_find = 0;
 
@@ -102,6 +102,8 @@ int debitar(int idConta, int valor)  {
 }
 
 
+/* Funcao igual a debitar(), apenas nao contem mutex, 
+ * para nao ocorrerem eventuais erros de interblocagem. */
 
 int debitarTransf(int idConta, int valor)  {
 
@@ -143,6 +145,8 @@ int creditar(int idConta, int valor)  {
 }
 
 
+/* Funcao igual a creditar(), apenas nao contem mutex, 
+ * para nao ocorrerem eventuais erros de interblocagem. */
 
 int creditarTransf(int idConta, int valor)  {
 
@@ -156,6 +160,7 @@ int creditarTransf(int idConta, int valor)  {
 
   	return 0;
 }
+
 
 int lerSaldo(int idConta)  {
 
@@ -252,7 +257,7 @@ int transferir(int idConta, int idContaDest, int valor)  {
 	testMutexLock(&mutexContas[min(idConta - 1, idContaDest)]);
 	testMutexLock(&mutexContas[max(idConta - 1, idContaDest)]);
 
-	if ( debitarTransf(idConta, valor) !=0)  {
+	if (debitarTransf(idConta, valor) !=0)  {
 
 		testMutexUnlock(&mutexContas[max(idConta - 1, idContaDest)]);
 		testMutexUnlock(&mutexContas[min(idConta - 1, idContaDest)]);
@@ -318,8 +323,13 @@ void writeBuf(comando_t item)  {
 
 	testSemWait(&escrita);
 
-	testMutexLock(&mutexCount);
+	testMutexLock(&mutexCount);	
+
+	/* Depois de colocar um comando no buffer, incrementamos a variavel count, 
+	 * que conta o numero comandos por executar. */
+
 	count++;
+
 	testMutexUnlock(&mutexCount);
 
 	cmdbuffer[buff_write_idx] = item;
@@ -428,8 +438,13 @@ int consume(comando_t item)  {
 	}
 
 	testMutexLock(&mutexCount);
-	
+
+	/* Depois de "consumido" um comando, decrementamos a variavel count, 
+	 * que conta o numero comandos por executar. */
+
 	count --;
+
+	/* Quando count == 0, e enviado um signal para a variavel pthread_cond_t &cond. */ 
 
 	if (count == 0)  {
 
@@ -440,8 +455,6 @@ int consume(comando_t item)  {
 			perror("pthread_cond_signal: ");
 		}
 	}
-
-
 
 	testMutexUnlock(&mutexCount);
 
@@ -539,7 +552,7 @@ int testMutexDestroy(pthread_mutex_t *cadeado)  {
 }
 
 
-
+/* Funcao que recebe dois inteiros, e devolve o menor de ambos. */
 int min(int x, int y)  {
 
 	if (x < y) 
@@ -548,6 +561,8 @@ int min(int x, int y)  {
 
 	return y;
 }
+
+/* Funcao que recebe dois inteiros, e devolve o maior de ambos. */
 
 int max(int x, int y)  {
 
