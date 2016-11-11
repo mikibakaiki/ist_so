@@ -1,0 +1,23 @@
+creditar 1 100
+
+creditar 2 100
+
+creditar 3 100
+
+transferir 1 2 10
+
+transferir 2 3 10
+
+simular 3
+
+transferir 3 1 10
+
+lerSaldo 1
+
+lerSaldo 2
+
+lerSaldo 3
+
+
+
+sair

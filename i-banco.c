@@ -94,48 +94,49 @@ int main (int argc, char** argv)  {
 
         if  ((numargs < 0) ||
              (numargs > 0 &&
-             (strcmp(args[0], COMANDO_SAIR) == 0)) ||
-             ((numargs > 1) && (strcmp(args[0], COMANDO_SAIR) == 0) && (strcmp(args[1], "agora") == 0)))  {
+             (strcmp(args[0], COMANDO_SAIR) == 0)))  { 
+
+            if (numargs > 1 && strcmp(args[1], "agora") == 0)
+
+                /* A funcao kill() envia um signal a todos os processos, incluindo o processo pai.*/
+
+                kill(0, SIGUSR1);
 
         	printf("i-banco vai terminar.\n--\n");
 
-        	int i;
+    	    int i;
 
-        	comando_t input;
+    	    comando_t input;
 
-        	for(i = 0; i < NUM_TRABALHADORAS; i++)  {
-        		
-            	input = produzir(OP_SAIR, -1, -1, -1);
-     
-            	writeBuf(input);
+    	    for(i = 0; i < NUM_TRABALHADORAS; i++)  {
+    		
+                input = produzir(OP_SAIR, -1, -1, -1);
+
+                writeBuf(input);
             }
 
-        	for(i = 0; i < NUM_TRABALHADORAS; i++)  {
-        		
-        		if((rc = pthread_join(tid[i], NULL)) != 0)  {
+    	    for(i = 0; i < NUM_TRABALHADORAS; i++)  {
+    		
+                if((rc = pthread_join(tid[i], NULL)) != 0)  {
 
-        			errno = rc;
+                    errno = rc;
 
-        			perror("pthread_join: ");
+                    perror("pthread_join: ");
 
-        			exit(EXIT_FAILURE);
-        		}
-
-        	}
+                    exit(EXIT_FAILURE);
+                }
+            }   	
+        
           	
-            /* A funcao kill() envia um signal a todos os processos, incluindo o processo pai.*/
-
-            /*kill(0, SIGUSR1);*/
-            
-            /*int estado;
+            int estado;
             pid_t test;
             
             while (1)  {
 
-                 * A funcao wait() aguarda que um processo filho termine. 
+                 /* A funcao wait() aguarda que um processo filho termine. 
                  * Em caso de sucesso, devolve o PID do processo filho terminado.
                  * Em caso de erro, devolve -1 e devolve para a variavel errno o codigo do erro.  
-                 * O erro ECHILD ocorre quando ja nao ha mais processos filho.*
+                 * O erro ECHILD ocorre quando ja nao ha mais processos filho.*/
 
                 test = wait(&estado);
 
@@ -151,19 +152,17 @@ int main (int argc, char** argv)  {
                 if (WIFSIGNALED(estado) != 0)
 
                     printf("FILHO TERMINADO (PID=%d; terminou abruptamente)\n", test);
-            }*/
-
-
+            }
+ 
+       	    printf("--\ni-banco terminou.\n");
             
-           	printf("--\ni-banco terminou.\n");
-            
-            for (i=0; i<NUM_CONTAS; i++)  {
+            for (i = 0; i < NUM_CONTAS; i++)  {
 
-  				testMutexDestroy(&mutexContas[i]);
-			}
+                testMutexDestroy(&mutexContas[i]);
+            }
 
             testMutexDestroy(&cadeadoC);
-            testMutexDestroy(&mutexTransf);
+            testMutexDestroy(&mutexCount);
             testSemDestroy(&escrita);
             testSemDestroy(&leitura);
                
@@ -271,7 +270,15 @@ int main (int argc, char** argv)  {
 
             /* A funcao fork() cria um processo filho. 
              * Se devolver 0, signifca que estamos no processo filho.*/
+            
+            testMutexLock(&mutexCount);
 
+            while (!(count == 0))
+            	
+            	pthread_cond_wait(&cond, &mutexCount);
+
+            testMutexUnlock(&mutexCount);
+            
             pid = fork();
 
             if (pid == 0)  {
@@ -292,8 +299,10 @@ int main (int argc, char** argv)  {
         else
 
             printf("Comando desconhecido. Tente de novo.\n"); 
+
     }
 }
+
 
 
 
