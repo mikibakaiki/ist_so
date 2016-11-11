@@ -11,7 +11,7 @@
 
 all: i-banco
 
-i-banco: i-banco.o contas.o commandlinereader.o 
+i-banco: i-banco.o commandlinereader.o contas.o
 		gcc -g -Wall -pedantic -pthread -o i-banco i-banco.o commandlinereader.o contas.o
 
 i-banco.o: i-banco.c contas.h commandlinereader.h
