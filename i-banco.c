@@ -283,8 +283,6 @@ int main (int argc, char** argv)  {
 
             numAnos = atoi(args[1]) + 1;
 
-           
-            
             testMutexLock(&mutexCount);
             
             /* Enquanto count != 0, o comando simular fica em espera de um 
@@ -309,7 +307,7 @@ int main (int argc, char** argv)  {
 
             if (pid == -1)  {
 
-                perror("fork :");
+                perror("fork: ");
             }
 
             /* A funcao signal() define a funcao handler() como a funcao que processa
