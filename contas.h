@@ -53,10 +53,14 @@ comando_t cmdbuffer[CMD_BUFFER_DIM];
 
 pthread_mutex_t cadeadoC;
 pthread_mutex_t mutexContas[NUM_CONTAS];
-pthread_mutex_t mutexTransf;
+pthread_mutex_t mutexCount;
+pthread_cond_t cond;
 
 sem_t escrita;
 sem_t leitura;
+
+
+int count;  /*numero de tarefas por executar */
 
 int contasSaldos[NUM_CONTAS];
 
@@ -70,6 +74,10 @@ void simular(int numAnos);
 void handler(int sig);
 
 int transferir(int idConta, int idContaDest, int valor);
+int debitarTransf(int idConta, int valor);
+int creditarTransf(int idConta, int valor);
+int min(int x, int y);
+int max(int x, int y);
 
 
 

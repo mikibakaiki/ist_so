@@ -26,16 +26,12 @@
 /***   CONSTANTES   ***/ 
 
 
-int buff_write_idx = 0, buff_read_idx = 0;
+int buff_write_idx = 0, buff_read_idx = 0, count = 0;
 
 
 /* Flag para verificar signals.*/
 
 int sig_find = 0;
-
-pthread_mutex_t mutexContas[NUM_CONTAS];
-pthread_mutex_t mutexTransf;
-
 
 
 /***   FUNCOES   ***/
@@ -63,7 +59,7 @@ void inicializarContas()  {
 		}
 	}
 
-  	if ((rc = pthread_mutex_init(&mutexTransf, NULL)) != 0)  {
+  	if ((rc = pthread_mutex_init(&mutexCount, NULL)) != 0)  {
 
 		errno = rc;
 
@@ -99,6 +95,29 @@ int debitar(int idConta, int valor)  {
 }
 
 
+
+int debitarTransf(int idConta, int valor)  {
+
+  	atrasar();
+
+  	if (!contaExiste(idConta) || valor < 0)
+
+		return -1;
+
+  	if (contasSaldos[idConta - 1] < valor)  {
+		
+		return -1;
+	}
+
+  	atrasar();
+
+  	contasSaldos[idConta - 1] -= valor;
+
+  	return 0;
+}
+
+
+
 int creditar(int idConta, int valor)  {
 
   	atrasar();
@@ -116,6 +135,20 @@ int creditar(int idConta, int valor)  {
   	return 0;
 }
 
+
+
+int creditarTransf(int idConta, int valor)  {
+
+  	atrasar();
+
+  	if (!contaExiste(idConta) || valor < 0)
+
+		return -1;
+
+  	contasSaldos[idConta - 1] += valor;
+
+  	return 0;
+}
 
 int lerSaldo(int idConta)  {
 
@@ -205,23 +238,27 @@ int transferir(int idConta, int idContaDest, int valor)  {
 
 		return -1;
 
-	testMutexLock(&mutexTransf);
+	testMutexLock(&mutexContas[min(idConta, idContaDest)]);
+	testMutexLock(&mutexContas[max(idConta, idContaDest)]);
 
-	if ( debitar(idConta, valor) !=0)  {
+	if ( debitarTransf(idConta, valor) !=0)  {
 
-		testMutexUnlock(&mutexTransf);
-
-		return -1;
-	}
-
-	if ( creditar(idContaDest, valor) != 0)  {
-
-		testMutexUnlock(&mutexTransf);
+		testMutexUnlock(&mutexContas[max(idConta, idContaDest)]);
+		testMutexUnlock(&mutexContas[min(idConta, idContaDest)]);
 
 		return -1;
 	}
 
-	testMutexUnlock(&mutexTransf);
+	if ( creditarTransf(idContaDest, valor) != 0)  {
+
+		testMutexUnlock(&mutexContas[max(idConta, idContaDest)]);
+		testMutexUnlock(&mutexContas[min(idConta, idContaDest)]);
+
+		return -1;
+	}
+
+	testMutexUnlock(&mutexContas[max(idConta, idContaDest)]);
+	testMutexUnlock(&mutexContas[min(idConta, idContaDest)]);
 
 	return 0;
 }
@@ -270,6 +307,10 @@ void writeBuf(comando_t item)  {
 
 	testSemWait(&escrita);
 
+	testMutexLock(&mutexCount);
+	count++;
+	testMutexUnlock(&mutexCount);
+
 	cmdbuffer[buff_write_idx] = item;
 
 	buff_write_idx = (buff_write_idx + 1) % CMD_BUFFER_DIM;
@@ -298,7 +339,7 @@ void* thr_consumer (void *arg) {
 
 comando_t readBuf()  {
 
-  	testSemWait(&leitura);
+	testSemWait(&leitura);
 
   	testMutexLock(&cadeadoC);
 
@@ -374,6 +415,16 @@ int consume(comando_t item)  {
 
 		pthread_exit(EXIT_SUCCESS);
 	}
+
+	testMutexLock(&mutexCount);
+	
+	count --;
+
+	if( count == 0 )
+
+		pthread_cond_signal(&cond);
+
+	testMutexUnlock(&mutexCount);
 
 	return 0;
 }
@@ -466,4 +517,24 @@ int testMutexDestroy(pthread_mutex_t *cadeado)  {
 	}
 
 	return 0;
+}
+
+
+
+int min(int x, int y)  {
+
+	if (x < y) 
+
+		return x;
+
+	return y;
+}
+
+int max(int x, int y)  {
+
+	if (x > y)
+
+		return x;
+
+	return y;
 }
