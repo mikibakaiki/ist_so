@@ -1,14 +1,22 @@
+transferir 1 2 10
+
 creditar 1 100
 
 creditar 2 100
 
 creditar 3 100
 
+debitar 1 10
+
+debitar 2 10
+
+debitar 3 10
+
 transferir 1 2 10
 
 transferir 2 3 10
 
-simular 3
+simular 2
 
 transferir 3 1 10
 
@@ -17,6 +25,8 @@ lerSaldo 1
 lerSaldo 2
 
 lerSaldo 3
+
+simular 1 
 
 
 
