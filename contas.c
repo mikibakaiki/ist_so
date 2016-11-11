@@ -65,6 +65,13 @@ void inicializarContas()  {
 
     	perror("pthread_mutex_init: ");
     }
+
+   if ((rc = pthread_cond_init(&cond, NULL)) != 0)  {
+
+        errno = rc;
+
+        perror("pthread_cond_destroy: ");
+    }
 }
 
 
@@ -363,7 +370,7 @@ comando_t readBuf()  {
 
 int consume(comando_t item)  {
 
-	int saldo;
+	int saldo, rc;
 
 	if (item.operacao == OP_LERSALDO)  {
 
@@ -422,9 +429,17 @@ int consume(comando_t item)  {
 	
 	count --;
 
-	if( count == 0 )
+	if (count == 0)  {
 
-		pthread_cond_signal(&cond);
+		if ((rc = pthread_cond_signal(&cond)) != 0)  {
+
+			errno = rc;
+
+			perror("pthread_cond_signal: ");
+		}
+	}
+
+
 
 	testMutexUnlock(&mutexCount);
 
