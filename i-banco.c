@@ -283,10 +283,12 @@ int main (int argc, char** argv)  {
 
             numAnos = atoi(args[1]) + 1;
 
-            /* A funcao fork() cria um processo filho. 
-             * Se devolver 0, signifca que estamos no processo filho.*/
+           
             
             testMutexLock(&mutexCount);
+            
+            /* Enquanto count != 0, o comando simular fica em espera de um 
+             * signal enviado para a variavel pthread_cond_t &cond. */
 
             while (!(count == 0))  {
             	
@@ -300,6 +302,9 @@ int main (int argc, char** argv)  {
 
             testMutexUnlock(&mutexCount);
 
+            /* A funcao fork() cria um processo filho. 
+             * Se devolver 0, signifca que estamos no processo filho. */
+
             pid = fork();
 
             if (pid == -1)  {
@@ -307,19 +312,23 @@ int main (int argc, char** argv)  {
                 perror("fork :");
             }
 
+            /* A funcao signal() define a funcao handler() como a funcao que processa
+             * o signal SIGUSR1, que e definido pelo utilizador. */
+
             if (signal(SIGUSR1,handler) == SIG_ERR)
 
                     perror("signal: ");
 
             if (pid == 0)  {
 
-                /* A funcao signal() define a funcao handler() como a funcao que processa
-                 * o signal SIGUSR1, que e definido pelo utilizador.*/
-                
+                /* Processo filho. */
+
                 simular(numAnos);
 
                 exit(EXIT_SUCCESS);
             }
+
+            /* Processo pai. */
 
             continue;
         }
