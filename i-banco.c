@@ -251,9 +251,9 @@ int main (int argc, char** argv)  {
 
         else if (strcmp(args[0], COMANDO_TRANSFERIR) == 0)  {
         	
-            if (numargs < 3)  {
+            if (numargs <= 3)  {
 
-                printf("%s: Sintaxe inválida, tente de novo.\n", COMANDO_LER_SALDO);
+                printf("%s: Sintaxe inválida, tente de novo.\n", COMANDO_TRANSFERIR);
 
                 continue;
             }
@@ -299,7 +299,7 @@ int main (int argc, char** argv)  {
             }
 
             testMutexUnlock(&mutexCount);
-            
+
             pid = fork();
 
             if (pid == -1)  {
@@ -307,15 +307,15 @@ int main (int argc, char** argv)  {
                 perror("fork :");
             }
 
+            if (signal(SIGUSR1,handler) == SIG_ERR)
+
+                    perror("signal: ");
+
             if (pid == 0)  {
 
                 /* A funcao signal() define a funcao handler() como a funcao que processa
                  * o signal SIGUSR1, que e definido pelo utilizador.*/
-
-                if (signal(SIGUSR1,handler) == SIG_ERR)
-
-                    perror("signal: ");
-
+                
                 simular(numAnos);
 
                 exit(EXIT_SUCCESS);

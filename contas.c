@@ -204,14 +204,15 @@ void simular(int numAnos)  {
 			
 		  		creditar(idConta, saldo*TAXAJURO);
 
-		  	if (saldo < CUSTOMANUTENCAO)
+		  		if (saldo < CUSTOMANUTENCAO)
 
-				debitar(idConta, saldo);
+					debitar(idConta, saldo);
 
-		  	else
-				debitar(idConta, CUSTOMANUTENCAO);
+		  		else
+					debitar(idConta, CUSTOMANUTENCAO);
 
 			saldo = lerSaldo(idConta);
+			
 			}
 
 		printf("Conta %d, Saldo %d\n", idConta, saldo);
@@ -240,6 +241,7 @@ void handler(int sig)  {
 		perror("signal: ");
 }
 
+
 int transferir(int idConta, int idContaDest, int valor)  {
 
 
@@ -247,27 +249,27 @@ int transferir(int idConta, int idContaDest, int valor)  {
 
 		return -1;
 
-	testMutexLock(&mutexContas[min(idConta, idContaDest)]);
-	testMutexLock(&mutexContas[max(idConta, idContaDest)]);
+	testMutexLock(&mutexContas[min(idConta - 1, idContaDest)]);
+	testMutexLock(&mutexContas[max(idConta - 1, idContaDest)]);
 
 	if ( debitarTransf(idConta, valor) !=0)  {
 
-		testMutexUnlock(&mutexContas[max(idConta, idContaDest)]);
-		testMutexUnlock(&mutexContas[min(idConta, idContaDest)]);
+		testMutexUnlock(&mutexContas[max(idConta - 1, idContaDest)]);
+		testMutexUnlock(&mutexContas[min(idConta - 1, idContaDest)]);
 
 		return -1;
 	}
 
 	if ( creditarTransf(idContaDest, valor) != 0)  {
 
-		testMutexUnlock(&mutexContas[max(idConta, idContaDest)]);
-		testMutexUnlock(&mutexContas[min(idConta, idContaDest)]);
+		testMutexUnlock(&mutexContas[max(idConta - 1, idContaDest)]);
+		testMutexUnlock(&mutexContas[min(idConta - 1, idContaDest)]);
 
 		return -1;
 	}
 
-	testMutexUnlock(&mutexContas[max(idConta, idContaDest)]);
-	testMutexUnlock(&mutexContas[min(idConta, idContaDest)]);
+	testMutexUnlock(&mutexContas[max(idConta - 1, idContaDest)]);
+	testMutexUnlock(&mutexContas[min(idConta - 1, idContaDest)]);
 
 	return 0;
 }
