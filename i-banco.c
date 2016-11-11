@@ -82,7 +82,10 @@ int main (int argc, char** argv)  {
     /* A funcao signal() recebe um signal SIGUSR1, predefinido pelo utilizador.
      * Como estamos no processo pai, define-se SIG_IGN para tratar o sinal, ou seja, ignora-o.*/
     
-    signal(SIGUSR1, SIG_IGN);
+    if (signal(SIGUSR1, SIG_IGN) == SIG_ERR)
+
+        perror("signal: ");
+
 
     while (1)  {
         
@@ -138,11 +141,16 @@ int main (int argc, char** argv)  {
                  * Em caso de erro, devolve -1 e devolve para a variavel errno o codigo do erro.  
                  * O erro ECHILD ocorre quando ja nao ha mais processos filho.*/
 
-                test = wait(&estado);
+                if ((test = wait(&estado)) == -1)  {
 
-                if (test == -1 && errno == ECHILD)
+                    if (errno == ECHILD)
 
-                    break;
+                        break;
+
+                    else
+
+                        perror("wait: ");
+                }
 
                 if (WIFEXITED(estado) > 0)
 
@@ -281,16 +289,23 @@ int main (int argc, char** argv)  {
             
             pid = fork();
 
+            if (pid == -1)  {
+
+                perror("fork :");
+            }
+
             if (pid == 0)  {
 
                 /* A funcao signal() define a funcao handler() como a funcao que processa
                  * o signal SIGUSR1, que e definido pelo utilizador.*/
 
-                signal(SIGUSR1,handler);
+                if (signal(SIGUSR1,handler) == SIG_ERR)
+
+                    perror("signal: ");
 
                 simular(numAnos);
 
-                exit(0);
+                exit(EXIT_SUCCESS);
             }
 
             continue;

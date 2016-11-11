@@ -73,13 +73,6 @@ int lerSaldo(int idConta);
 void simular(int numAnos);
 void handler(int sig);
 
-int transferir(int idConta, int idContaDest, int valor);
-int debitarTransf(int idConta, int valor);
-int creditarTransf(int idConta, int valor);
-int min(int x, int y);
-int max(int x, int y);
-
-
 
 /***   PARTE 2   ***/
 
@@ -90,7 +83,6 @@ void* thr_consumer(void *arg);
 comando_t readBuf();
 int consume(comando_t item);
 
-
 int testMutexLock(pthread_mutex_t *cadeado);
 int testMutexUnlock(pthread_mutex_t *cadeado);
 
@@ -100,6 +92,14 @@ int testSemPost(sem_t *semaforo);
 int testSemDestroy(sem_t *semaforo);
 int testMutexDestroy(pthread_mutex_t *cadeado);
 
+
+/***   PARTE 3   ***/
+
+int transferir(int idConta, int idContaDest, int valor);
+int debitarTransf(int idConta, int valor);
+int creditarTransf(int idConta, int valor);
+int min(int x, int y);
+int max(int x, int y);
 
 
 #endif
