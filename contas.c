@@ -228,7 +228,9 @@ void handler(int sig)  {
 
 	sig_find = 1;
 
-	signal(sig, handler);
+	if (signal(sig, handler) == SIG_ERR)
+
+		perror("signal: ");
 }
 
 int transferir(int idConta, int idContaDest, int valor)  {
