@@ -70,7 +70,7 @@ void inicializarContas()  {
 
         errno = rc;
 
-        perror("pthread_cond_destroy: ");
+        perror("pthread_cond_init: ");
     }
 }
 
