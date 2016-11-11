@@ -169,6 +169,13 @@ int main (int argc, char** argv)  {
                 testMutexDestroy(&mutexContas[i]);
             }
 
+            if ((rc = pthread_cond_destroy(&cond)) != 0)  {
+
+                errno = rc;
+
+                perror("pthread_cond_destroy: ");
+            }
+
             testMutexDestroy(&cadeadoC);
             testMutexDestroy(&mutexCount);
             testSemDestroy(&escrita);
@@ -281,9 +288,15 @@ int main (int argc, char** argv)  {
             
             testMutexLock(&mutexCount);
 
-            while (!(count == 0))
+            while (!(count == 0))  {
             	
-            	pthread_cond_wait(&cond, &mutexCount);
+            	if ((rc = pthread_cond_wait(&cond, &mutexCount)) != 0)  {
+
+                    errno = rc;
+
+                    perror("pthread_cond_wait: ");
+                }
+            }
 
             testMutexUnlock(&mutexCount);
             
