@@ -1,0 +1,47 @@
+creditar 1 100
+creditar 2 100
+creditar 3 100
+
+transferir 1 2 10
+transferir 2 3 10
+transferir 3 1 10
+transferir 1 2 10
+transferir 2 1 10
+transferir 1 3 10
+transferir 3 1 10
+transferir 2 3 10
+transferir 3 2 10
+
+transferir 1 2 100
+transferir 3 2 100
+transferir 2 1 300
+transferir 1 3 300
+
+
+lerSaldo 1
+lerSaldo 2
+lerSaldo 3
+
+lerSaldo 1
+lerSaldo 2
+lerSaldo 3
+
+lerSaldo 1
+lerSaldo 2
+lerSaldo 3
+
+lerSaldo 1
+lerSaldo 2
+lerSaldo 3
+
+lerSaldo 1
+lerSaldo 2
+lerSaldo 3
+
+lerSaldo 1
+lerSaldo 2
+lerSaldo 3
+
+lerSaldo 1
+lerSaldo 2
+lerSaldo 3

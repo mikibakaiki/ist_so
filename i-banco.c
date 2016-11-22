@@ -21,7 +21,7 @@
 #include <errno.h>
 #include <pthread.h>
 #include <semaphore.h>
-
+#include <fcntl.h>
 
 
 #define MAXARGS 4
@@ -29,7 +29,6 @@
 
 #define NUM_TRABALHADORAS 3  /*numero de threads*/
 #define CMD_BUFFER_DIM (NUM_TRABALHADORAS * 2)  /*dimensao do buffer circular*/
-
 
 
 int main (int argc, char** argv)  {
@@ -40,15 +39,20 @@ int main (int argc, char** argv)  {
 
     inicializarContas();
 
+    if ((fd = open("./log.txt",O_WRONLY | O_CREAT | O_TRUNC, S_IRWXU | S_IRWXG | S_IRWXO )) == -1)  {
+        errno = fd;
+        perror("open: ");
+    }
+
     int rc, t;
-    
+
     if ((rc = pthread_mutex_init(&cadeadoC, NULL)) != 0)  {
 
         errno = rc;
 
         perror("pthread_mutex_init: ");
     }
-    
+
  	if (sem_init(&escrita, 1, CMD_BUFFER_DIM) == -1)  {
 
      	perror("sem_init: ");
@@ -56,15 +60,19 @@ int main (int argc, char** argv)  {
  	}
 
     if (sem_init(&leitura, 1, 0) == -1)  {
-     	
+
      	perror("sem_init: ");
     }
 
     pthread_t tid[NUM_TRABALHADORAS];
 
+    int t_num[NUM_TRABALHADORAS]; /*##aux*/
+
     for(t = 0; t < NUM_TRABALHADORAS; t++)  {
 
-        rc = pthread_create(&tid[t], NULL, thr_consumer, NULL);
+        t_num[t] = t;
+
+        rc = pthread_create(&tid[t], NULL, thr_consumer,(void *) &t_num[t]);
 
         if(rc != 0)  {
 
@@ -81,23 +89,23 @@ int main (int argc, char** argv)  {
 
     /* A funcao signal() recebe um signal SIGUSR1, predefinido pelo utilizador.
      * Como estamos no processo pai, define-se SIG_IGN para tratar o sinal, ou seja, ignora-o.*/
-    
+
     if (signal(SIGUSR1, SIG_IGN) == SIG_ERR)
 
         perror("signal: ");
 
 
     while (1)  {
-        
+
         int numargs;
-    
+
         numargs = readLineArguments(args, MAXARGS+1, buffer, BUFFER_SIZE);
 
         /* EOF (end of file) do stdin ou comando "sair" */
 
         if  ((numargs < 0) ||
              (numargs > 0 &&
-             (strcmp(args[0], COMANDO_SAIR) == 0)))  { 
+             (strcmp(args[0], COMANDO_SAIR) == 0)))  {
 
             if (numargs > 1 && strcmp(args[1], "agora") == 0)
 
@@ -112,14 +120,14 @@ int main (int argc, char** argv)  {
     	    comando_t input;
 
     	    for(i = 0; i < NUM_TRABALHADORAS; i++)  {
-    		
+
                 input = produzir(OP_SAIR, -1, -1, -1);
 
                 writeBuf(input);
             }
 
     	    for(i = 0; i < NUM_TRABALHADORAS; i++)  {
-    		
+
                 if((rc = pthread_join(tid[i], NULL)) != 0)  {
 
                     errno = rc;
@@ -128,17 +136,17 @@ int main (int argc, char** argv)  {
 
                     exit(EXIT_FAILURE);
                 }
-            }   	
-        
-          	
+            }
+
+
             int estado;
             pid_t test;
-            
+
             while (1)  {
 
-                 /* A funcao wait() aguarda que um processo filho termine. 
+                 /* A funcao wait() aguarda que um processo filho termine.
                  * Em caso de sucesso, devolve o PID do processo filho terminado.
-                 * Em caso de erro, devolve -1 e devolve para a variavel errno o codigo do erro.  
+                 * Em caso de erro, devolve -1 e devolve para a variavel errno o codigo do erro.
                  * O erro ECHILD ocorre quando ja nao ha mais processos filho.*/
 
                 if ((test = wait(&estado)) == -1)  {
@@ -155,15 +163,15 @@ int main (int argc, char** argv)  {
                 if (WIFEXITED(estado) > 0)
 
                     printf("FILHO TERMINADO (PID=%d; terminou normalmente)\n", test);
-                
+
 
                 if (WIFSIGNALED(estado) != 0)
 
                     printf("FILHO TERMINADO (PID=%d; terminou abruptamente)\n", test);
             }
- 
+
        	    printf("--\ni-banco terminou.\n");
-            
+
             for (i = 0; i < NUM_CONTAS; i++)  {
 
                 testMutexDestroy(&mutexContas[i]);
@@ -180,17 +188,17 @@ int main (int argc, char** argv)  {
             testMutexDestroy(&mutexCount);
             testSemDestroy(&escrita);
             testSemDestroy(&leitura);
-               
+
             exit(EXIT_SUCCESS);
         }
 
-    
+
         else if (numargs == 0)
 
             /* Nenhum argumento; ignora e volta a pedir */
 
             continue;
-        
+
 
         /* Debitar */
 
@@ -199,7 +207,7 @@ int main (int argc, char** argv)  {
         	if (numargs < 3)  {
 
                 printf("%s: Sintaxe inválida, tente de novo.\n", COMANDO_DEBITAR);
-                
+
                 continue;
             }
 
@@ -250,7 +258,7 @@ int main (int argc, char** argv)  {
         /* Transferir */
 
         else if (strcmp(args[0], COMANDO_TRANSFERIR) == 0)  {
-        	
+
             if (numargs <= 3)  {
 
                 printf("%s: Sintaxe inválida, tente de novo.\n", COMANDO_TRANSFERIR);
@@ -271,7 +279,7 @@ int main (int argc, char** argv)  {
         else if (strcmp(args[0], COMANDO_SIMULAR) == 0)  {
 
             int numAnos;
-            
+
             int pid;
 
             if (numargs < 2)  {
@@ -284,12 +292,12 @@ int main (int argc, char** argv)  {
             numAnos = atoi(args[1]) + 1;
 
             testMutexLock(&mutexCount);
-            
-            /* Enquanto count != 0, o comando simular fica em espera de um 
+
+            /* Enquanto count != 0, o comando simular fica em espera de um
              * signal enviado para a variavel pthread_cond_t &cond. */
 
             while (!(count == 0))  {
-            	
+
             	if ((rc = pthread_cond_wait(&cond, &mutexCount)) != 0)  {
 
                     errno = rc;
@@ -300,7 +308,7 @@ int main (int argc, char** argv)  {
 
             testMutexUnlock(&mutexCount);
 
-            /* A funcao fork() cria um processo filho. 
+            /* A funcao fork() cria um processo filho.
              * Se devolver 0, signifca que estamos no processo filho. */
 
             pid = fork();
@@ -309,6 +317,7 @@ int main (int argc, char** argv)  {
 
                 perror("fork: ");
             }
+
 
             /* A funcao signal() define a funcao handler() como a funcao que processa
              * o signal SIGUSR1, que e definido pelo utilizador. */
@@ -320,7 +329,7 @@ int main (int argc, char** argv)  {
             if (pid == 0)  {
 
                 /* Processo filho. */
-
+                close(fd);
                 simular(numAnos);
 
                 exit(EXIT_SUCCESS);
@@ -333,12 +342,7 @@ int main (int argc, char** argv)  {
 
         else
 
-            printf("Comando desconhecido. Tente de novo.\n"); 
+            printf("Comando desconhecido. Tente de novo.\n");
 
     }
 }
-
-
-
-
-
