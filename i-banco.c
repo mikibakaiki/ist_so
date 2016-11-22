@@ -24,6 +24,10 @@
 #include <fcntl.h>
 
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> 5cee5a16e8d6a5daa42b8322241d78a44fcaef93
 #define MAXARGS 4
 #define BUFFER_SIZE 100
 
@@ -89,7 +93,11 @@ int main (int argc, char** argv)  {
 
     /* A funcao signal() recebe um signal SIGUSR1, predefinido pelo utilizador.
      * Como estamos no processo pai, define-se SIG_IGN para tratar o sinal, ou seja, ignora-o.*/
+<<<<<<< HEAD
 
+=======
+    
+>>>>>>> 5cee5a16e8d6a5daa42b8322241d78a44fcaef93
     if (signal(SIGUSR1, SIG_IGN) == SIG_ERR)
 
         perror("signal: ");
@@ -105,7 +113,11 @@ int main (int argc, char** argv)  {
 
         if  ((numargs < 0) ||
              (numargs > 0 &&
+<<<<<<< HEAD
              (strcmp(args[0], COMANDO_SAIR) == 0)))  {
+=======
+             (strcmp(args[0], COMANDO_SAIR) == 0)))  { 
+>>>>>>> 5cee5a16e8d6a5daa42b8322241d78a44fcaef93
 
             if (numargs > 1 && strcmp(args[1], "agora") == 0)
 
@@ -116,6 +128,7 @@ int main (int argc, char** argv)  {
         	printf("i-banco vai terminar.\n--\n");
 
     	    int i;
+<<<<<<< HEAD
 
     	    comando_t input;
 
@@ -123,27 +136,50 @@ int main (int argc, char** argv)  {
 
                 input = produzir(OP_SAIR, -1, -1, -1);
 
+=======
+
+    	    comando_t input;
+
+    	    for(i = 0; i < NUM_TRABALHADORAS; i++)  {
+    		
+                input = produzir(OP_SAIR, -1, -1, -1);
+
+>>>>>>> 5cee5a16e8d6a5daa42b8322241d78a44fcaef93
                 writeBuf(input);
             }
 
     	    for(i = 0; i < NUM_TRABALHADORAS; i++)  {
+<<<<<<< HEAD
 
+=======
+    		
+>>>>>>> 5cee5a16e8d6a5daa42b8322241d78a44fcaef93
                 if((rc = pthread_join(tid[i], NULL)) != 0)  {
 
                     errno = rc;
 
                     perror("pthread_join: ");
+<<<<<<< HEAD
 
                     exit(EXIT_FAILURE);
                 }
             }
 
 
+=======
+
+                    exit(EXIT_FAILURE);
+                }
+            }   	
+        
+          	
+>>>>>>> 5cee5a16e8d6a5daa42b8322241d78a44fcaef93
             int estado;
             pid_t test;
 
             while (1)  {
 
+<<<<<<< HEAD
                  /* A funcao wait() aguarda que um processo filho termine.
                  * Em caso de sucesso, devolve o PID do processo filho terminado.
                  * Em caso de erro, devolve -1 e devolve para a variavel errno o codigo do erro.
@@ -157,6 +193,21 @@ int main (int argc, char** argv)  {
 
                     else
 
+=======
+                 /* A funcao wait() aguarda que um processo filho termine. 
+                 * Em caso de sucesso, devolve o PID do processo filho terminado.
+                 * Em caso de erro, devolve -1 e devolve para a variavel errno o codigo do erro.  
+                 * O erro ECHILD ocorre quando ja nao ha mais processos filho.*/
+
+                if ((test = wait(&estado)) == -1)  {
+
+                    if (errno == ECHILD)
+
+                        break;
+
+                    else
+
+>>>>>>> 5cee5a16e8d6a5daa42b8322241d78a44fcaef93
                         perror("wait: ");
                 }
 
@@ -169,15 +220,22 @@ int main (int argc, char** argv)  {
 
                     printf("FILHO TERMINADO (PID=%d; terminou abruptamente)\n", test);
             }
+<<<<<<< HEAD
 
        	    printf("--\ni-banco terminou.\n");
 
+=======
+ 
+       	    printf("--\ni-banco terminou.\n");
+            
+>>>>>>> 5cee5a16e8d6a5daa42b8322241d78a44fcaef93
             for (i = 0; i < NUM_CONTAS; i++)  {
 
                 testMutexDestroy(&mutexContas[i]);
             }
 
             if ((rc = pthread_cond_destroy(&cond)) != 0)  {
+<<<<<<< HEAD
 
                 errno = rc;
 
@@ -189,6 +247,19 @@ int main (int argc, char** argv)  {
             testSemDestroy(&escrita);
             testSemDestroy(&leitura);
 
+=======
+
+                errno = rc;
+
+                perror("pthread_cond_destroy: ");
+            }
+
+            testMutexDestroy(&cadeadoC);
+            testMutexDestroy(&mutexCount);
+            testSemDestroy(&escrita);
+            testSemDestroy(&leitura);
+               
+>>>>>>> 5cee5a16e8d6a5daa42b8322241d78a44fcaef93
             exit(EXIT_SUCCESS);
         }
 
@@ -251,6 +322,7 @@ int main (int argc, char** argv)  {
             comando_t input;
 
             input = produzir(OP_LERSALDO, atoi(args[1]), -1, -1);
+<<<<<<< HEAD
 
             writeBuf(input);
         }
@@ -269,17 +341,44 @@ int main (int argc, char** argv)  {
             comando_t input;
 
             input = produzir(OP_TRANSFERIR, atoi(args[1]), atoi(args[2]), atoi(args[3]));
+=======
+>>>>>>> 5cee5a16e8d6a5daa42b8322241d78a44fcaef93
 
             writeBuf(input);
         }
 
+<<<<<<< HEAD
+=======
+        /* Transferir */
+
+        else if (strcmp(args[0], COMANDO_TRANSFERIR) == 0)  {
+        	
+            if (numargs <= 3)  {
+
+                printf("%s: Sintaxe inválida, tente de novo.\n", COMANDO_TRANSFERIR);
+
+                continue;
+            }
+
+            comando_t input;
+
+            input = produzir(OP_TRANSFERIR, atoi(args[1]), atoi(args[2]), atoi(args[3]));
+
+            writeBuf(input);
+        }
+
+>>>>>>> 5cee5a16e8d6a5daa42b8322241d78a44fcaef93
 
         /* Simular */
 
         else if (strcmp(args[0], COMANDO_SIMULAR) == 0)  {
 
             int numAnos;
+<<<<<<< HEAD
 
+=======
+            
+>>>>>>> 5cee5a16e8d6a5daa42b8322241d78a44fcaef93
             int pid;
 
             if (numargs < 2)  {
@@ -292,12 +391,21 @@ int main (int argc, char** argv)  {
             numAnos = atoi(args[1]) + 1;
 
             testMutexLock(&mutexCount);
+<<<<<<< HEAD
 
             /* Enquanto count != 0, o comando simular fica em espera de um
              * signal enviado para a variavel pthread_cond_t &cond. */
 
             while (!(count == 0))  {
 
+=======
+            
+            /* Enquanto count != 0, o comando simular fica em espera de um 
+             * signal enviado para a variavel pthread_cond_t &cond. */
+
+            while (!(count == 0))  {
+            	
+>>>>>>> 5cee5a16e8d6a5daa42b8322241d78a44fcaef93
             	if ((rc = pthread_cond_wait(&cond, &mutexCount)) != 0)  {
 
                     errno = rc;
@@ -308,7 +416,11 @@ int main (int argc, char** argv)  {
 
             testMutexUnlock(&mutexCount);
 
+<<<<<<< HEAD
             /* A funcao fork() cria um processo filho.
+=======
+            /* A funcao fork() cria um processo filho. 
+>>>>>>> 5cee5a16e8d6a5daa42b8322241d78a44fcaef93
              * Se devolver 0, signifca que estamos no processo filho. */
 
             pid = fork();
@@ -318,9 +430,22 @@ int main (int argc, char** argv)  {
                 perror("fork: ");
             }
 
+<<<<<<< HEAD
 
             /* A funcao signal() define a funcao handler() como a funcao que processa
              * o signal SIGUSR1, que e definido pelo utilizador. */
+=======
+            /* A funcao signal() define a funcao handler() como a funcao que processa
+             * o signal SIGUSR1, que e definido pelo utilizador. */
+
+            if (signal(SIGUSR1,handler) == SIG_ERR)
+
+                    perror("signal: ");
+
+            if (pid == 0)  {
+
+                /* Processo filho. */
+>>>>>>> 5cee5a16e8d6a5daa42b8322241d78a44fcaef93
 
             if (signal(SIGUSR1,handler) == SIG_ERR)
 
@@ -342,7 +467,19 @@ int main (int argc, char** argv)  {
 
         else
 
+<<<<<<< HEAD
             printf("Comando desconhecido. Tente de novo.\n");
 
     }
 }
+=======
+            printf("Comando desconhecido. Tente de novo.\n"); 
+
+    }
+}
+
+
+
+
+
+>>>>>>> 5cee5a16e8d6a5daa42b8322241d78a44fcaef93
