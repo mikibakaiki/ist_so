@@ -1,33 +1,44 @@
-1: creditar
-2: creditar
-0: creditar
-2: creditar
-1: creditar
-0: creditar
-2: creditar
-1: creditar
-0: creditar
-2: lerSaldo
-1: lerSaldo
-1: lerSaldo
-0: lerSaldo
-2: lerSaldo
-0: lerSaldo
-1: lerSaldo
-2: lerSaldo
-0: lerSaldo
-2: lerSaldo
-1: transferir
-1: transferir
-1: transferir
-1: transferir
-1: transferir
-1: transferir
-2: transferir
-1: debitar
-0: creditar
-2: creditar
-1: creditar
-0: creditar
-2: debitar
-2: debitar
+1: creditar - OK
+3: creditar - OK
+2: creditar - OK
+1: creditar - OK
+2: creditar - ERRO
+3: creditar - OK
+1: creditar - OK
+2: creditar - OK
+3: creditar - OK
+1: creditar - OK
+2: lerSaldo - OK
+3: lerSaldo - OK
+1: lerSaldo - OK
+2: lerSaldo - OK
+3: lerSaldo - OK
+2: lerSaldo - OK
+1: lerSaldo - OK
+3: lerSaldo - OK
+1: lerSaldo - OK
+2: lerSaldo - OK
+3: transferir - OK
+1: transferir - OK
+1: transferir - OK
+1: transferir - OK
+1: transferir - OK
+3: transferir - OK
+3: transferir - OK
+1: transferir - ERRO
+2: transferir - OK
+3: transferir - OK
+2: debitar - ERRO
+1: debitar - OK
+3: debitar - ERRO
+2: debitar - ERRO
+2: creditar - OK
+3: creditar - OK
+1: creditar - OK
+2: creditar - OK
+1: debitar - ERRO
+3: debitar - OK
+1: debitar - ERRO
+2: debitar - ERRO
+1: debitar - ERRO
+3: debitar - OK

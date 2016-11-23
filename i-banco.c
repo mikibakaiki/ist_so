@@ -36,6 +36,8 @@ int main (int argc, char** argv)  {
 
     char buffer[BUFFER_SIZE];
 
+    int numFilhos = 0;
+
     inicializarContas();
 
     if ((fd = open("./log.txt",O_WRONLY | O_CREAT | O_TRUNC, S_IRWXU | S_IRWXG | S_IRWXO )) == -1)  {
@@ -306,7 +308,6 @@ int main (int argc, char** argv)  {
 
             testMutexUnlock(&mutexCount);
 
-
             /* A funcao fork() cria um processo filho.
              * Se devolver 0, signifca que estamos no processo filho. */
 
@@ -328,13 +329,18 @@ int main (int argc, char** argv)  {
 
                 /* Processo filho. */
                 close(fd);
+                if ((fd = open("./log.txt",O_WRONLY | O_CREAT | O_TRUNC, S_IRWXU | S_IRWXG | S_IRWXO )) == -1)  {
+                    errno = fd;
+                    perror("open: ");
+                }
                 simular(numAnos);
 
                 exit(EXIT_SUCCESS);
             }
 
             /* Processo pai. */
-
+            pidFilhos[numFilhos] = pid;
+            numFilhos ++;
             continue;
         }
 

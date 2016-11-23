@@ -23,6 +23,7 @@
 
 #define NUM_TRABALHADORAS 3  /*numero de threads*/
 #define CMD_BUFFER_DIM (NUM_TRABALHADORAS * 2)  /*dimensao do buffer circular*/
+#define MAXFILHOS 20
 
 #define COMANDO_DEBITAR "debitar"
 #define COMANDO_CREDITAR "creditar"
@@ -65,6 +66,7 @@ int count;  /* Numero de comandos por executar. */
 int fd;
 
 int contasSaldos[NUM_CONTAS];
+pid_t pidFilhos[MAXFILHOS];
 
 
 

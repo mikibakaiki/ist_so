@@ -80,15 +80,20 @@ int debitar(int idConta, int valor, int num)  {
 
   	atrasar();
 
-  	if (!contaExiste(idConta) || valor < 0)
+  	if (!contaExiste(idConta) || valor < 0)  {
+
+        dprintf(fd, "%d: %s - ERRO\n", num, COMANDO_DEBITAR);
 
 		return -1;
+    }
 
 	testMutexLock(&mutexContas[idConta - 1]);
 
   	if (contasSaldos[idConta - 1] < valor)  {
 
-		testMutexUnlock(&mutexContas[idConta - 1]);
+        dprintf(fd, "%d: %s - ERRO\n", num, COMANDO_DEBITAR);
+
+        testMutexUnlock(&mutexContas[idConta - 1]);
 
 		return -1;
 	}
@@ -97,7 +102,7 @@ int debitar(int idConta, int valor, int num)  {
 
   	contasSaldos[idConta - 1] -= valor;
 
-    dprintf(fd, "%d: %s\n", num, COMANDO_DEBITAR);
+    dprintf(fd, "%d: %s - OK\n", num, COMANDO_DEBITAR);
 
   	testMutexUnlock(&mutexContas[idConta - 1]);
 
@@ -134,15 +139,16 @@ int creditar(int idConta, int valor, int num)  {
 
   	atrasar();
 
-  	if (!contaExiste(idConta) || valor < 0)
-
+  	if (!contaExiste(idConta) || valor < 0)  {
+        dprintf(fd, "%d: %s - ERRO\n", num, COMANDO_CREDITAR);
 		return -1;
+    }
 
 	testMutexLock(&mutexContas[idConta - 1]);
 
   	contasSaldos[idConta - 1] += valor;
 
-    dprintf(fd, "%d: %s\n", num, COMANDO_CREDITAR);
+    dprintf(fd, "%d: %s - OK\n", num, COMANDO_CREDITAR);
 
   	testMutexUnlock(&mutexContas[idConta - 1]);
 
@@ -173,14 +179,18 @@ int lerSaldo(int idConta, int num)  {
 
 	atrasar();
 
-	if (!contaExiste(idConta))
+	if (!contaExiste(idConta))  {
+
+        dprintf(fd, "%d: %s - ERRO\n", num, COMANDO_LER_SALDO);
 
 		return -1;
+    }
 
 	testMutexLock(&mutexContas[idConta - 1]);
 
 	i = contasSaldos[idConta - 1];
-    dprintf(fd, "%d: %s\n", num, COMANDO_LER_SALDO);
+
+    dprintf(fd, "%d: %s - OK\n", num, COMANDO_LER_SALDO);
 
 	testMutexUnlock(&mutexContas[idConta - 1]);
 
@@ -256,15 +266,18 @@ void handler(int sig)  {
 int transferir(int idConta, int idContaDest, int valor, int num)  {
 
 
-	if (!contaExiste(idConta) || !contaExiste(idContaDest) || idConta == idContaDest)
+	if (!contaExiste(idConta) || !contaExiste(idContaDest) || idConta == idContaDest)  {
 
+        dprintf(fd, "%d: %s - ERRO\n", num, COMANDO_TRANSFERIR);
 		return -1;
+    }
 
 	testMutexLock(&mutexContas[min(idConta - 1, idContaDest -1 )]);
 	testMutexLock(&mutexContas[max(idConta - 1, idContaDest - 1)]);
 
 	if (debitarTransf(idConta, valor) !=0)  {
 
+        dprintf(fd, "%d: %s - ERRO\n", num, COMANDO_TRANSFERIR);
 		testMutexUnlock(&mutexContas[max(idConta - 1, idContaDest - 1)]);
 		testMutexUnlock(&mutexContas[min(idConta - 1, idContaDest - 1)]);
 
@@ -273,13 +286,14 @@ int transferir(int idConta, int idContaDest, int valor, int num)  {
 
 	if ( creditarTransf(idContaDest, valor) != 0)  {
 
+        dprintf(fd, "%d: %s - ERRO\n", num, COMANDO_TRANSFERIR);
 		testMutexUnlock(&mutexContas[max(idConta - 1, idContaDest - 1)]);
 		testMutexUnlock(&mutexContas[min(idConta - 1, idContaDest - 1)]);
 
 		return -1;
 	}
 
-    dprintf(fd, "%d: %s\n", num, COMANDO_TRANSFERIR);
+    dprintf(fd, "%d: %s - OK\n", num, COMANDO_TRANSFERIR);
 
 	testMutexUnlock(&mutexContas[max(idConta - 1, idContaDest - 1)]);
 	testMutexUnlock(&mutexContas[min(idConta - 1, idContaDest - 1)]);
@@ -353,7 +367,7 @@ void* thr_consumer (void *arg) {
 
     int t_num;
 
-    t_num = *((int *)arg);
+    t_num = *((int *)arg) + 1;
 
   	while(1)  {
 
