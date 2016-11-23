@@ -18,12 +18,13 @@
 #include <pthread.h>
 #include <semaphore.h>
 #include <errno.h>
+#include <fcntl.h>
 
 
 #define atrasar() sleep(ATRASO)
 
 
-/***   CONSTANTES   ***/ 
+/***   CONSTANTES   ***/
 
 
 int buff_write_idx = 0, buff_read_idx = 0, count = 0;
@@ -75,7 +76,7 @@ void inicializarContas()  {
 }
 
 
-int debitar(int idConta, int valor)  {
+int debitar(int idConta, int valor, int num)  {
 
   	atrasar();
 
@@ -88,7 +89,7 @@ int debitar(int idConta, int valor)  {
   	if (contasSaldos[idConta - 1] < valor)  {
 
 		testMutexUnlock(&mutexContas[idConta - 1]);
-		
+
 		return -1;
 	}
 
@@ -96,13 +97,15 @@ int debitar(int idConta, int valor)  {
 
   	contasSaldos[idConta - 1] -= valor;
 
+    dprintf(fd, "%d: %s\n", num, COMANDO_DEBITAR);
+
   	testMutexUnlock(&mutexContas[idConta - 1]);
 
   	return 0;
 }
 
 
-/* Funcao igual a debitar(), apenas nao contem mutex, 
+/* Funcao igual a debitar(), apenas nao contem mutex,
  * para nao ocorrerem eventuais erros de interblocagem. */
 
 int debitarTransf(int idConta, int valor)  {
@@ -114,7 +117,7 @@ int debitarTransf(int idConta, int valor)  {
 		return -1;
 
   	if (contasSaldos[idConta - 1] < valor)  {
-		
+
 		return -1;
 	}
 
@@ -127,7 +130,7 @@ int debitarTransf(int idConta, int valor)  {
 
 
 
-int creditar(int idConta, int valor)  {
+int creditar(int idConta, int valor, int num)  {
 
   	atrasar();
 
@@ -139,13 +142,15 @@ int creditar(int idConta, int valor)  {
 
   	contasSaldos[idConta - 1] += valor;
 
+    dprintf(fd, "%d: %s\n", num, COMANDO_CREDITAR);
+
   	testMutexUnlock(&mutexContas[idConta - 1]);
 
   	return 0;
 }
 
 
-/* Funcao igual a creditar(), apenas nao contem mutex, 
+/* Funcao igual a creditar(), apenas nao contem mutex,
  * para nao ocorrerem eventuais erros de interblocagem. */
 
 int creditarTransf(int idConta, int valor)  {
@@ -162,7 +167,7 @@ int creditarTransf(int idConta, int valor)  {
 }
 
 
-int lerSaldo(int idConta)  {
+int lerSaldo(int idConta, int num)  {
 
 	int i;
 
@@ -175,6 +180,7 @@ int lerSaldo(int idConta)  {
 	testMutexLock(&mutexContas[idConta - 1]);
 
 	i = contasSaldos[idConta - 1];
+    dprintf(fd, "%d: %s\n", num, COMANDO_LER_SALDO);
 
 	testMutexUnlock(&mutexContas[idConta - 1]);
 
@@ -195,7 +201,7 @@ void simular(int numAnos)  {
 		printf("\nSIMULACAO: Ano %d\n", ano);
 
 		printf("=================\n");
-		
+
 		/* Simula o valor de cada conta, num determinado ano.
 		 * Credita-se a taxa de juro e, caso o saldo nao seja suficiente para debitar
 		 * o custo de manutencao, a conta fica a zero.
@@ -203,21 +209,21 @@ void simular(int numAnos)  {
 
 		for (idConta = 1; idConta <= NUM_CONTAS; idConta++)  {
 
-			saldo = lerSaldo(idConta);
+			saldo = lerSaldo(idConta, 0);
 
 			if (ano != 0)  {
-			
-		  		creditar(idConta, saldo*TAXAJURO);
+
+		  		creditar(idConta, saldo*TAXAJURO, 0);
 
 		  		if (saldo < CUSTOMANUTENCAO)
 
-					debitar(idConta, saldo);
+					debitar(idConta, saldo, 0);
 
 		  		else
-					debitar(idConta, CUSTOMANUTENCAO);
+					debitar(idConta, CUSTOMANUTENCAO, 0);
 
-			saldo = lerSaldo(idConta);
-			
+			saldo = lerSaldo(idConta, 0);
+
 			}
 
 		printf("Conta %d, Saldo %d\n", idConta, saldo);
@@ -247,34 +253,36 @@ void handler(int sig)  {
 }
 
 
-int transferir(int idConta, int idContaDest, int valor)  {
+int transferir(int idConta, int idContaDest, int valor, int num)  {
 
 
 	if (!contaExiste(idConta) || !contaExiste(idContaDest) || idConta == idContaDest)
 
 		return -1;
 
-	testMutexLock(&mutexContas[min(idConta - 1, idContaDest)]);
-	testMutexLock(&mutexContas[max(idConta - 1, idContaDest)]);
+	testMutexLock(&mutexContas[min(idConta - 1, idContaDest -1 )]);
+	testMutexLock(&mutexContas[max(idConta - 1, idContaDest - 1)]);
 
 	if (debitarTransf(idConta, valor) !=0)  {
 
-		testMutexUnlock(&mutexContas[max(idConta - 1, idContaDest)]);
-		testMutexUnlock(&mutexContas[min(idConta - 1, idContaDest)]);
+		testMutexUnlock(&mutexContas[max(idConta - 1, idContaDest - 1)]);
+		testMutexUnlock(&mutexContas[min(idConta - 1, idContaDest - 1)]);
 
 		return -1;
 	}
 
 	if ( creditarTransf(idContaDest, valor) != 0)  {
 
-		testMutexUnlock(&mutexContas[max(idConta - 1, idContaDest)]);
-		testMutexUnlock(&mutexContas[min(idConta - 1, idContaDest)]);
+		testMutexUnlock(&mutexContas[max(idConta - 1, idContaDest - 1)]);
+		testMutexUnlock(&mutexContas[min(idConta - 1, idContaDest - 1)]);
 
 		return -1;
 	}
 
-	testMutexUnlock(&mutexContas[max(idConta - 1, idContaDest)]);
-	testMutexUnlock(&mutexContas[min(idConta - 1, idContaDest)]);
+    dprintf(fd, "%d: %s\n", num, COMANDO_TRANSFERIR);
+
+	testMutexUnlock(&mutexContas[max(idConta - 1, idContaDest - 1)]);
+	testMutexUnlock(&mutexContas[min(idConta - 1, idContaDest - 1)]);
 
 	return 0;
 }
@@ -296,7 +304,7 @@ comando_t produzir(int op, int idOri, int val, int idDest)  {
 	  	i.operacao = op;
 
 	  	i.idConta = idOri;
-	  	
+
 	  	i.valor = val;
 
 	  	i.idContaDestino = idDest;
@@ -323,9 +331,9 @@ void writeBuf(comando_t item)  {
 
 	testSemWait(&escrita);
 
-	testMutexLock(&mutexCount);	
+	testMutexLock(&mutexCount);
 
-	/* Depois de colocar um comando no buffer, incrementamos a variavel count, 
+	/* Depois de colocar um comando no buffer, incrementamos a variavel count,
 	 * que conta o numero comandos por executar. */
 
 	count++;
@@ -343,14 +351,17 @@ void writeBuf(comando_t item)  {
 
 void* thr_consumer (void *arg) {
 
+    int t_num;
+
+    t_num = *((int *)arg);
+
   	while(1)  {
 
 		comando_t item;
 
 		item = readBuf();
 
-		consume(item);
-			
+		consume(item,t_num);
   	}
 
   	return NULL;
@@ -380,13 +391,13 @@ comando_t readBuf()  {
 
 /* Funcao que analisa a estrutura recebida e executa o comando respectivo. */
 
-int consume(comando_t item)  {
+int consume(comando_t item, int num)  {
 
 	int saldo, rc;
 
 	if (item.operacao == OP_LERSALDO)  {
 
-		saldo = lerSaldo(item.idConta);
+		saldo = lerSaldo(item.idConta, num);
 
 		if (saldo < 0)
 
@@ -399,7 +410,7 @@ int consume(comando_t item)  {
 
 	if (item.operacao == OP_CREDITAR)  {
 
-		if (creditar (item.idConta, item.valor) < 0)
+		if (creditar (item.idConta, item.valor, num) < 0)
 
             printf("%s(%d, %d): Erro\n\n", COMANDO_CREDITAR, item.idConta, item.valor);
 
@@ -409,27 +420,26 @@ int consume(comando_t item)  {
 	}
 
 	if (item.operacao == OP_DEBITAR)  {
-		
-		if (debitar (item.idConta, item.valor) < 0)
+
+		if (debitar (item.idConta, item.valor, num) < 0)
 
             printf("%s(%d, %d): Erro\n\n", COMANDO_DEBITAR, item.idConta, item.valor);
 
         else
 
             printf("%s(%d, %d): OK\n\n", COMANDO_DEBITAR, item.idConta, item.valor);
-		
+
 	}
 
 	if (item.operacao == OP_TRANSFERIR)  {
-		
-		if ( (transferir(item.idConta, item.idContaDestino, item.valor) != 0) )
+
+		if ( (transferir(item.idConta, item.idContaDestino, item.valor, num) != 0) )
 
 			printf("Erro ao transferir valor da conta %d para a conta %d\n\n", item.idConta, item.idContaDestino);
-		
+
 		else
 
 			printf("transferir(%d, %d, %d): OK\n\n", item.idConta, item.idContaDestino, item.valor);
-
 	}
 
 	if (item.operacao == OP_SAIR)  {
@@ -437,14 +447,16 @@ int consume(comando_t item)  {
 		pthread_exit(EXIT_SUCCESS);
 	}
 
+    /* Aqui deve levar o write para poder escrever que ja concluiu o comando*/
+
 	testMutexLock(&mutexCount);
 
-	/* Depois de "consumido" um comando, decrementamos a variavel count, 
+	/* Depois de "consumido" um comando, decrementamos a variavel count,
 	 * que conta o numero comandos por executar. */
 
 	count --;
 
-	/* Quando count == 0, e enviado um signal para a variavel pthread_cond_t &cond. */ 
+	/* Quando count == 0, e enviado um signal para a variavel pthread_cond_t &cond. */
 
 	if (count == 0)  {
 
@@ -461,7 +473,7 @@ int consume(comando_t item)  {
 	return 0;
 }
 
-/* Funcao testMutexLock verifica se e possivel trancar o mutex, atraves da funcao pthread_mutex_lock(). 
+/* Funcao testMutexLock verifica se e possivel trancar o mutex, atraves da funcao pthread_mutex_lock().
  * Retorna 0 em caso afirmativo e resulta em erro caso contrario. */
 
 int testMutexLock(pthread_mutex_t *cadeado)  {
@@ -478,7 +490,7 @@ int testMutexLock(pthread_mutex_t *cadeado)  {
 	return 0;
 }
 
-/* Funcao testMutexUnlock verifica se e possivel destrancar o mutex, atraves da funcao pthread_mutex_unlock(). 
+/* Funcao testMutexUnlock verifica se e possivel destrancar o mutex, atraves da funcao pthread_mutex_unlock().
  * Retorna 0 em caso afirmativo e resulta em erro caso contrario. */
 
 int testMutexUnlock(pthread_mutex_t *cadeado)  {
@@ -495,7 +507,7 @@ int testMutexUnlock(pthread_mutex_t *cadeado)  {
 	return 0;
 }
 
-/* Funcao testSemWait verifica se e possivel fechar o semaforo, atraves da funcao sem_wait(). 
+/* Funcao testSemWait verifica se e possivel fechar o semaforo, atraves da funcao sem_wait().
  * Retorna 0 em caso afirmativo e resulta em erro caso contrario. */
 
 int testSemWait(sem_t *semaforo)  {
@@ -508,7 +520,7 @@ int testSemWait(sem_t *semaforo)  {
 	return 0;
 }
 
-/* Funcao testSemPost verifica se e possivel abrir o semaforo, atraves da funcao sem_post(). 
+/* Funcao testSemPost verifica se e possivel abrir o semaforo, atraves da funcao sem_post().
  * Retorna 0 em caso afirmativo e resulta em erro caso contrario. */
 
 int testSemPost(sem_t *semaforo)  {
@@ -521,7 +533,7 @@ int testSemPost(sem_t *semaforo)  {
 	return 0;
 }
 
-/* Funcao testSemDestroy verifica se e possivel destruir o semaforo, atraves da funcao sem_destroy(). 
+/* Funcao testSemDestroy verifica se e possivel destruir o semaforo, atraves da funcao sem_destroy().
  * Retorna 0 em caso afirmativo e resulta em erro caso contrario. */
 
 int testSemDestroy(sem_t *semaforo)  {
@@ -534,7 +546,7 @@ int testSemDestroy(sem_t *semaforo)  {
 	return 0;
 }
 
-/* Funcao testMutexDestroy verifica se e possivel destruir o mutex, atraves da funcao pthread_mutex_destroy(). 
+/* Funcao testMutexDestroy verifica se e possivel destruir o mutex, atraves da funcao pthread_mutex_destroy().
  * Retorna 0 em caso afirmativo e resulta em erro caso contrario. */
 
 int testMutexDestroy(pthread_mutex_t *cadeado)  {
@@ -555,7 +567,7 @@ int testMutexDestroy(pthread_mutex_t *cadeado)  {
 /* Funcao que recebe dois inteiros, e devolve o menor de ambos. */
 int min(int x, int y)  {
 
-	if (x < y) 
+	if (x < y)
 
 		return x;
 

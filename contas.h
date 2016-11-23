@@ -45,7 +45,7 @@ typedef struct  {
 	int idConta;
 	int valor;
 	int idContaDestino;
-	
+
 } comando_t;
 
 comando_t cmdbuffer[CMD_BUFFER_DIM];
@@ -62,14 +62,17 @@ sem_t leitura;
 
 int count;  /* Numero de comandos por executar. */
 
+int fd;
+
 int contasSaldos[NUM_CONTAS];
+
 
 
 void inicializarContas();
 int contaExiste(int idConta);
-int debitar(int idConta, int valor);
-int creditar(int idConta, int valor);
-int lerSaldo(int idConta);
+int debitar(int idConta, int valor, int num);
+int creditar(int idConta, int valor, int num);
+int lerSaldo(int idConta, int num);
 void simular(int numAnos);
 void handler(int sig);
 
@@ -81,7 +84,8 @@ comando_t produzir(int op, int idOri, int val, int idDest);
 void writeBuf(comando_t item);
 void* thr_consumer(void *arg);
 comando_t readBuf();
-int consume(comando_t item);
+int consume(comando_t item, int t_num);
+
 
 int testMutexLock(pthread_mutex_t *cadeado);
 int testMutexUnlock(pthread_mutex_t *cadeado);
@@ -95,7 +99,8 @@ int testMutexDestroy(pthread_mutex_t *cadeado);
 
 /***   PARTE 3   ***/
 
-int transferir(int idConta, int idContaDest, int valor);
+int transferir(int idConta, int idContaDest, int valor, int num);
+
 int debitarTransf(int idConta, int valor);
 int creditarTransf(int idConta, int valor);
 int min(int x, int y);
