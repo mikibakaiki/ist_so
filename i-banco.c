@@ -41,7 +41,6 @@ int main (int argc, char** argv)  {
     inicializarContas();
 
     if ((fd = open("./log.txt",O_WRONLY | O_CREAT | O_TRUNC, S_IRWXU | S_IRWXG | S_IRWXO )) == -1)  {
-        errno = fd;
         perror("open: ");
     }
 
@@ -276,20 +275,13 @@ int main (int argc, char** argv)  {
         /* Simular */
 
         else if (strcmp(args[0], COMANDO_SIMULAR) == 0)  {
-
             int numAnos;
-
             int pid;
-
             if (numargs < 2)  {
-
                 printf("%s: Sintaxe inválida, tente de novo.\n", COMANDO_SIMULAR);
-
                 continue;
             }
-
             numAnos = atoi(args[1]) + 1;
-
             testMutexLock(&mutexCount);
 
 
@@ -297,11 +289,8 @@ int main (int argc, char** argv)  {
              * signal enviado para a variavel pthread_cond_t &cond. */
 
             while (!(count == 0))  {
-
             	if ((rc = pthread_cond_wait(&cond, &mutexCount)) != 0)  {
-
                     errno = rc;
-
                     perror("pthread_cond_wait: ");
                 }
             }
@@ -314,7 +303,6 @@ int main (int argc, char** argv)  {
             pid = fork();
 
             if (pid == -1)  {
-
                 perror("fork: ");
             }
 
@@ -322,17 +310,22 @@ int main (int argc, char** argv)  {
              * o signal SIGUSR1, que e definido pelo utilizador. */
 
             if (signal(SIGUSR1,handler) == SIG_ERR)
-
                     perror("signal: ");
 
             if (pid == 0)  {
-
                 /* Processo filho. */
                 close(fd);
-                if ((fd = open("./i-banco-sim-PID",O_WRONLY | O_CREAT | O_TRUNC, S_IRWXU | S_IRWXG | S_IRWXO )) == -1)  {
-                    errno = fd;
-                    perror("open: ");
+                /*int fileDes;
+                char fileName[27];
+
+                if ((fileDes = snprintf(fileName, sizeof(fileName), "./i-banco-sim-%d.txt\n", pidFilhos[numFilhos])) >= sizeof(filename))  {
+                    printf("Erro sprintf\n");
                 }
+
+                if ((newF = open(fileName, O_WRONLY | O_CREAT | O_TRUNC, S_IRWXU | S_IRWXG | S_IRWXO )) == -1)  {
+                    perror("open: ");
+                }*/
+
                 simular(numAnos);
                 exit(EXIT_SUCCESS);
             }

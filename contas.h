@@ -63,7 +63,7 @@ sem_t leitura;
 
 int count;  /* Numero de comandos por executar. */
 
-int fd;
+int fd, newF;
 
 int contasSaldos[NUM_CONTAS];
 pid_t pidFilhos[MAXFILHOS];

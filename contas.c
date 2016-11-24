@@ -82,7 +82,7 @@ int debitar(int idConta, int valor, int num)  {
 
   	if (!contaExiste(idConta) || valor < 0)  {
 
-        dprintf(fd, "%d: %s - ERRO\n", num, COMANDO_DEBITAR);
+        dprintf(fd, "%d: %s(%d, %d) - ERRO\n", num, COMANDO_DEBITAR, idConta, valor);
 
 		return -1;
     }
@@ -91,7 +91,7 @@ int debitar(int idConta, int valor, int num)  {
 
   	if (contasSaldos[idConta - 1] < valor)  {
 
-        dprintf(fd, "%d: %s - ERRO\n", num, COMANDO_DEBITAR);
+        dprintf(fd, "%d: %s(%d, %d) - ERRO\n", num, COMANDO_DEBITAR, idConta, valor);
 
         testMutexUnlock(&mutexContas[idConta - 1]);
 
@@ -102,7 +102,7 @@ int debitar(int idConta, int valor, int num)  {
 
   	contasSaldos[idConta - 1] -= valor;
 
-    dprintf(fd, "%d: %s - OK\n", num, COMANDO_DEBITAR);
+    dprintf(fd, "%d: %s(%d, %d) - OK\n", num, COMANDO_DEBITAR, idConta, valor);
 
   	testMutexUnlock(&mutexContas[idConta - 1]);
 
@@ -140,7 +140,7 @@ int creditar(int idConta, int valor, int num)  {
   	atrasar();
 
   	if (!contaExiste(idConta) || valor < 0)  {
-        dprintf(fd, "%d: %s - ERRO\n", num, COMANDO_CREDITAR);
+        dprintf(fd, "%d: %s(%d, %d) - ERRO\n", num, COMANDO_CREDITAR, idConta, valor);
 		return -1;
     }
 
@@ -148,7 +148,7 @@ int creditar(int idConta, int valor, int num)  {
 
   	contasSaldos[idConta - 1] += valor;
 
-    dprintf(fd, "%d: %s - OK\n", num, COMANDO_CREDITAR);
+    dprintf(fd, "%d: %s(%d,%d) - OK\n", num, COMANDO_CREDITAR, idConta, valor);
 
   	testMutexUnlock(&mutexContas[idConta - 1]);
 
@@ -181,7 +181,7 @@ int lerSaldo(int idConta, int num)  {
 
 	if (!contaExiste(idConta))  {
 
-        dprintf(fd, "%d: %s - ERRO\n", num, COMANDO_LER_SALDO);
+        dprintf(fd, "%d: %s(%d) - ERRO\n", num, COMANDO_LER_SALDO, idConta);
 
 		return -1;
     }
@@ -190,7 +190,7 @@ int lerSaldo(int idConta, int num)  {
 
 	i = contasSaldos[idConta - 1];
 
-    dprintf(fd, "%d: %s - OK\n", num, COMANDO_LER_SALDO);
+    dprintf(fd, "%d: %s(%d) - OK\n", num, COMANDO_LER_SALDO, idConta);
 
 	testMutexUnlock(&mutexContas[idConta - 1]);
 
@@ -223,14 +223,14 @@ void simular(int numAnos)  {
 
 			if (ano != 0)  {
 
-		  		creditar(idConta, saldo*TAXAJURO, 0);
+		  		creditarTransf(idConta, saldo*TAXAJURO, 0);
 
 		  		if (saldo < CUSTOMANUTENCAO)
 
-					debitar(idConta, saldo, 0);
+					debitarTransf(idConta, saldo, 0);
 
 		  		else
-					debitar(idConta, CUSTOMANUTENCAO, 0);
+					debitarTransf(idConta, CUSTOMANUTENCAO, 0);
 
 			saldo = lerSaldo(idConta, 0);
 
@@ -268,7 +268,7 @@ int transferir(int idConta, int idContaDest, int valor, int num)  {
 
 	if (!contaExiste(idConta) || !contaExiste(idContaDest) || idConta == idContaDest)  {
 
-        dprintf(fd, "%d: %s - ERRO\n", num, COMANDO_TRANSFERIR);
+        dprintf(fd, "%d: %s(%d, %d, %d) - ERRO\n", num, COMANDO_TRANSFERIR, idConta, idContaDest, valor);
 		return -1;
     }
 
@@ -277,7 +277,7 @@ int transferir(int idConta, int idContaDest, int valor, int num)  {
 
 	if (debitarTransf(idConta, valor) !=0)  {
 
-        dprintf(fd, "%d: %s - ERRO\n", num, COMANDO_TRANSFERIR);
+        dprintf(fd, "%d: %s(%d, %d, %d) - ERRO\n", num, COMANDO_TRANSFERIR, idConta, idContaDest, valor);
 		testMutexUnlock(&mutexContas[max(idConta - 1, idContaDest - 1)]);
 		testMutexUnlock(&mutexContas[min(idConta - 1, idContaDest - 1)]);
 
@@ -286,15 +286,14 @@ int transferir(int idConta, int idContaDest, int valor, int num)  {
 
 	if ( creditarTransf(idContaDest, valor) != 0)  {
 
-        dprintf(fd, "%d: %s - ERRO\n", num, COMANDO_TRANSFERIR);
+        dprintf(fd, "%d: %s(%d, %d, %d) - ERRO\n", num, COMANDO_TRANSFERIR, idConta, idContaDest, valor);
 		testMutexUnlock(&mutexContas[max(idConta - 1, idContaDest - 1)]);
 		testMutexUnlock(&mutexContas[min(idConta - 1, idContaDest - 1)]);
 
 		return -1;
 	}
 
-    dprintf(fd, "%d: %s - OK\n", num, COMANDO_TRANSFERIR);
-
+    dprintf(fd, "%d: %s(%d, %d, %d) - OK\n", num, COMANDO_TRANSFERIR, idConta, idContaDest, valor);
 	testMutexUnlock(&mutexContas[max(idConta - 1, idContaDest - 1)]);
 	testMutexUnlock(&mutexContas[min(idConta - 1, idContaDest - 1)]);
 
