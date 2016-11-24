@@ -197,6 +197,21 @@ int lerSaldo(int idConta, int num)  {
 	return i;
 }
 
+int lerSaldoTransf(int idConta, int num)  {
+
+	int i;
+
+	atrasar();
+
+	if (!contaExiste(idConta))  {
+		return -1;
+    }
+
+	i = contasSaldos[idConta - 1];
+
+	return i;
+}
+
 
 void simular(int numAnos)  {
 
@@ -219,20 +234,20 @@ void simular(int numAnos)  {
 
 		for (idConta = 1; idConta <= NUM_CONTAS; idConta++)  {
 
-			saldo = lerSaldo(idConta, 0);
+			saldo = lerSaldoTransf(idConta, 0);
 
 			if (ano != 0)  {
 
-		  		creditarTransf(idConta, saldo*TAXAJURO, 0);
+		  		creditarTransf(idConta, saldo*TAXAJURO);
 
 		  		if (saldo < CUSTOMANUTENCAO)
 
-					debitarTransf(idConta, saldo, 0);
+					debitarTransf(idConta, saldo);
 
 		  		else
-					debitarTransf(idConta, CUSTOMANUTENCAO, 0);
+					debitarTransf(idConta, CUSTOMANUTENCAO);
 
-			saldo = lerSaldo(idConta, 0);
+			saldo = lerSaldoTransf(idConta, 0);
 
 			}
 

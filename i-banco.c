@@ -205,7 +205,7 @@ int main (int argc, char** argv)  {
 
         	if (numargs < 3)  {
 
-                printf("%s: Sintaxe inválida, tente de novo.\n", COMANDO_DEBITAR);
+                printf("%s: Sintaxe inválida, tente de novo.\n\n", COMANDO_DEBITAR);
 
                 continue;
             }
@@ -223,7 +223,7 @@ int main (int argc, char** argv)  {
 
             if (numargs < 3)  {
 
-                printf("%s: Sintaxe inválida, tente de novo.\n", COMANDO_CREDITAR);
+                printf("%s: Sintaxe inválida, tente de novo.\n\n", COMANDO_CREDITAR);
 
                 continue;
             }
@@ -242,7 +242,7 @@ int main (int argc, char** argv)  {
 
             if (numargs < 2)  {
 
-                printf("%s: Sintaxe inválida, tente de novo.\n", COMANDO_LER_SALDO);
+                printf("%s: Sintaxe inválida, tente de novo.\n\n", COMANDO_LER_SALDO);
 
                 continue;
             }
@@ -260,7 +260,7 @@ int main (int argc, char** argv)  {
 
             if (numargs <= 3)  {
 
-                printf("%s: Sintaxe inválida, tente de novo.\n", COMANDO_TRANSFERIR);
+                printf("%s: Sintaxe inválida, tente de novo.\n\n", COMANDO_TRANSFERIR);
 
                 continue;
             }
@@ -278,7 +278,7 @@ int main (int argc, char** argv)  {
             int numAnos;
             int pid;
             if (numargs < 2)  {
-                printf("%s: Sintaxe inválida, tente de novo.\n", COMANDO_SIMULAR);
+                printf("%s: Sintaxe inválida, tente de novo.\n\n", COMANDO_SIMULAR);
                 continue;
             }
             numAnos = atoi(args[1]) + 1;
@@ -313,20 +313,27 @@ int main (int argc, char** argv)  {
                     perror("signal: ");
 
             if (pid == 0)  {
+
                 /* Processo filho. */
+
                 close(fd);
-                /*int fileDes;
+                close(1);  //ou close(fd) ???
+
+                int fileDes, aux;
                 char fileName[27];
 
-                if ((fileDes = snprintf(fileName, sizeof(fileName), "./i-banco-sim-%d.txt\n", pidFilhos[numFilhos])) >= sizeof(filename))  {
+                if ((fileDes = snprintf(fileName, sizeof(fileName), "./i-banco-sim-%d.txt", getpid())) >= sizeof(fileName))  {
                     printf("Erro sprintf\n");
                 }
 
                 if ((newF = open(fileName, O_WRONLY | O_CREAT | O_TRUNC, S_IRWXU | S_IRWXG | S_IRWXO )) == -1)  {
                     perror("open: ");
-                }*/
+                }
+
+                aux = dup2(newF, 1);
 
                 simular(numAnos);
+                close(aux);
                 exit(EXIT_SUCCESS);
             }
 

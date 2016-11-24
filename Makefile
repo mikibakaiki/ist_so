@@ -24,4 +24,4 @@ commandlinereader.o: commandlinereader.c commandlinereader.h
 		gcc -g -Wall -pedantic -c commandlinereader.c
 
 clean:
-	rm -f *.o i-banco
+	rm -f *.o i-banco i-banco-sim-*.txt log.txt

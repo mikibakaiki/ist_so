@@ -19,7 +19,7 @@
 #define TAXAJURO 0.1
 #define CUSTOMANUTENCAO 1
 
-#define ATRASO 1
+#define ATRASO 0
 
 #define NUM_TRABALHADORAS 3  /*numero de threads*/
 #define CMD_BUFFER_DIM (NUM_TRABALHADORAS * 2)  /*dimensao do buffer circular*/
@@ -75,6 +75,7 @@ int contaExiste(int idConta);
 int debitar(int idConta, int valor, int num);
 int creditar(int idConta, int valor, int num);
 int lerSaldo(int idConta, int num);
+
 void simular(int numAnos);
 void handler(int sig);
 
@@ -105,6 +106,7 @@ int transferir(int idConta, int idContaDest, int valor, int num);
 
 int debitarTransf(int idConta, int valor);
 int creditarTransf(int idConta, int valor);
+int lerSaldoTransf(int idConta, int num);
 int min(int x, int y);
 int max(int x, int y);
 
