@@ -329,12 +329,11 @@ int main (int argc, char** argv)  {
 
                 /* Processo filho. */
                 close(fd);
-                if ((fd = open("./log.txt",O_WRONLY | O_CREAT | O_TRUNC, S_IRWXU | S_IRWXG | S_IRWXO )) == -1)  {
+                if ((fd = open("./i-banco-sim-PID",O_WRONLY | O_CREAT | O_TRUNC, S_IRWXU | S_IRWXG | S_IRWXO )) == -1)  {
                     errno = fd;
                     perror("open: ");
                 }
                 simular(numAnos);
-
                 exit(EXIT_SUCCESS);
             }
 
