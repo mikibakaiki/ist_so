@@ -23,4 +23,8 @@
 #include <semaphore.h>
 #include <fcntl.h>
 
-int main(){}
+int main()  {
+
+    printf("Hello World\n");
+    return (0);
+}
