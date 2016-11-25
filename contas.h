@@ -46,6 +46,7 @@ typedef struct  {
 	int idConta;
 	int valor;
 	int idContaDestino;
+	char nome[50];
 
 } comando_t;
 
@@ -83,7 +84,7 @@ void handler(int sig);
 /***   PARTE 2   ***/
 
 
-comando_t produzir(int op, int idOri, int val, int idDest);
+comando_t produzir(int op, int idOri, int val, int idDest, char nome[50]);
 void writeBuf(comando_t item);
 void* thr_consumer(void *arg);
 comando_t readBuf();

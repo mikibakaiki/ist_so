@@ -19,7 +19,7 @@
 #include <semaphore.h>
 #include <errno.h>
 #include <fcntl.h>
-
+#include <string.h>
 
 #define atrasar() sleep(ATRASO)
 
@@ -323,7 +323,7 @@ int transferir(int idConta, int idContaDest, int valor, int num)  {
 
 /* Funcao que recebe os 3 argumentos iniciais e os coloca na estrutura comando_t, retornando-a. */
 
-comando_t produzir(int op, int idOri, int val, int idDest)  {
+comando_t produzir(int op, int idOri, int val, int idDest, char nome[50])  {
 
   	comando_t i;
 
@@ -336,6 +336,8 @@ comando_t produzir(int op, int idOri, int val, int idDest)  {
 	  	i.valor = val;
 
 	  	i.idContaDestino = idDest;
+
+	  	strcpy(nome, i.nome);
 	}
 
 	else  {
@@ -347,6 +349,8 @@ comando_t produzir(int op, int idOri, int val, int idDest)  {
 		i.valor = idDest;
 
 		i.idContaDestino = val;
+
+		strcpy(nome, i.nome);
 	}
 
   	return i;
@@ -379,7 +383,7 @@ void writeBuf(comando_t item)  {
 
 void* thr_consumer (void *arg) {
 
-    int t_num;
+    int t_num, paipe;
 
     t_num = *((int *)arg) + 1;
 
@@ -390,10 +394,21 @@ void* thr_consumer (void *arg) {
 		item = readBuf();
 
 		consume(item,t_num);
+
+		if((paipe = open(item.nome, O_WRONLY)) == -1) {
+
+			perror("open: ");
+		}
+
+		if((paipe = write(paipe, &item, sizeof(item))) == -1) {
+
+			perror("write: ");
+  		}
   	}
 
   	return NULL;
 }
+
 
 /* Funcao que retira uma estrutura comando_t do buffer circular e devolve-a. */
 

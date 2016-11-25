@@ -22,6 +22,8 @@
 #include <pthread.h>
 #include <semaphore.h>
 #include <fcntl.h>
+#include <sys/stat.h>
+#include <string.h>
 
 #define MAXARGS 4
 #define BUFFER_SIZE 100
@@ -39,8 +41,20 @@ int main (int argc, char** argv)  {
     int numFilhos = 0;
 
     inicializarContas();
+    
+    int pip;
 
-    if ((fd = open("./log.txt",O_WRONLY | O_CREAT | O_TRUNC, S_IRWXU | S_IRWXG | S_IRWXO )) == -1)  {
+    if((pip = mkfifo("/tmp/i-banco-pipe", 0777)) == -1)  {
+    	perror("mkfifo: ");
+    }
+
+    int paipe;
+
+    if((paipe = open("/tmp/i-banco-pipe", O_RDONLY) ) == -1)  {
+    	perror("open: ");
+    }
+
+    if ((fd = open("/tmp/log.txt",O_WRONLY | O_CREAT | O_TRUNC, S_IRWXU | S_IRWXG | S_IRWXO )) == -1)  {
         perror("open: ");
     }
 
@@ -101,9 +115,41 @@ int main (int argc, char** argv)  {
 
         numargs = readLineArguments(args, MAXARGS+1, buffer, BUFFER_SIZE);
 
+        int error;
+
+        comando_t comando;
+        
+        if ((error = read(paipe, &comando, sizeof(comando_t))) == -1)  {
+
+        	perror("read: ");
+        }
+
+        writeBuf(comando);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         /* EOF (end of file) do stdin ou comando "sair" */
 
-        if  ((numargs < 0) ||
+       	if  ((numargs < 0) ||
              (numargs > 0 &&
              (strcmp(args[0], COMANDO_SAIR) == 0)))  {
 
@@ -121,7 +167,7 @@ int main (int argc, char** argv)  {
             comando_t input;
     	    for(i = 0; i < NUM_TRABALHADORAS; i++)  {
 
-                input = produzir(OP_SAIR, -1, -1, -1);
+                input = produzir(OP_SAIR, -1, -1, -1, "sair");
                 writeBuf(input);
             }
 
@@ -199,78 +245,9 @@ int main (int argc, char** argv)  {
             continue;
 
 
-        /* Debitar */
 
-        else if (strcmp(args[0], COMANDO_DEBITAR) == 0)  {
 
-        	if (numargs < 3)  {
 
-                printf("%s: Sintaxe inválida, tente de novo.\n\n", COMANDO_DEBITAR);
-
-                continue;
-            }
-
-            comando_t input;
-
-            input = produzir(OP_DEBITAR, atoi(args[1]), atoi(args[2]), -1);
-
-            writeBuf(input);
-        }
-
-        /* Creditar */
-
-        else if (strcmp(args[0], COMANDO_CREDITAR) == 0)  {
-
-            if (numargs < 3)  {
-
-                printf("%s: Sintaxe inválida, tente de novo.\n\n", COMANDO_CREDITAR);
-
-                continue;
-            }
-
-            comando_t input;
-
-            input = produzir(OP_CREDITAR, atoi(args[1]), atoi(args[2]), -1);
-
-            writeBuf(input);
-
-        }
-
-        /* Ler Saldo */
-
-        else if (strcmp(args[0], COMANDO_LER_SALDO) == 0)  {
-
-            if (numargs < 2)  {
-
-                printf("%s: Sintaxe inválida, tente de novo.\n\n", COMANDO_LER_SALDO);
-
-                continue;
-            }
-
-            comando_t input;
-
-            input = produzir(OP_LERSALDO, atoi(args[1]), -1, -1);
-
-            writeBuf(input);
-        }
-
-        /* Transferir */
-
-        else if (strcmp(args[0], COMANDO_TRANSFERIR) == 0)  {
-
-            if (numargs <= 3)  {
-
-                printf("%s: Sintaxe inválida, tente de novo.\n\n", COMANDO_TRANSFERIR);
-
-                continue;
-            }
-
-            comando_t input;
-
-            input = produzir(OP_TRANSFERIR, atoi(args[1]), atoi(args[2]), atoi(args[3]));
-
-            writeBuf(input);
-        }
 
         /* Simular */
 
@@ -320,9 +297,9 @@ int main (int argc, char** argv)  {
                 close(1);  //ou close(fd) ???
 
                 int fileDes, aux;
-                char fileName[27];
+                char fileName[50];
 
-                if ((fileDes = snprintf(fileName, sizeof(fileName), "./i-banco-sim-%d.txt", getpid())) >= sizeof(fileName))  {
+                if ((fileDes = snprintf(fileName, sizeof(fileName), "/tmp/i-banco-sim-%d.txt", getpid())) >= sizeof(fileName))  {
                     printf("Erro sprintf\n");
                 }
 
