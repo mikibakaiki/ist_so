@@ -27,7 +27,7 @@
 
 
 #define MAXARGS 4
-#define BUFFER_SIZE 100
+#define BUFFER_SIZE 1024
 
 #define NUM_TRABALHADORAS 3  /*numero de threads*/
 #define CMD_BUFFER_DIM (NUM_TRABALHADORAS * 2)  /*dimensao do buffer circular*/
@@ -40,14 +40,16 @@ int main(int argc, char** argv)  {
 
     char buffer[BUFFER_SIZE];
 
+	char output[BUFFER_SIZE];
+
     inicializarContas();
 
-    char paipeName[50];
+    char paipeName[1024];
 
     int paipe;
 
     if ((paipe = snprintf(paipeName, sizeof(paipeName), "/tmp/pipe-terminal-%d", getpid())) >= sizeof(paipeName))  {
-        printf("Erro sprintf\n");
+        printf("Erro snprintf\n");
     }
 
 	printf("pipe name: %s\n", paipeName);
@@ -199,7 +201,7 @@ int main(int argc, char** argv)  {
 
             input = produzir(OP_DEBITAR, atoi(args[1]), atoi(args[2]), -1, paipeName);
 
-			printf("estrutura:\noperacao: %d\nConta: %d\nValor: %d\nPATH: %s\n", input.operacao, input.idConta, input.valor, input.nome);
+			printf("estrutura:\noperacao: %d\nConta: %d\nValor: %d\nPATH: %s\n\n\n", input.operacao, input.idConta, input.valor, input.nome);
 
 			//printf("Vou receber comando do pipe\n");
 
@@ -207,6 +209,18 @@ int main(int argc, char** argv)  {
 
             	perror("write: ");
             }
+
+			int fdPipeT;
+
+		    if ((fdPipeT = open(paipeName ,O_RDONLY)) == -1)  {
+		        perror("open: ");
+				exit(-1);
+		    }
+
+			read(fdPipeT, output, BUFFER_SIZE);
+
+			printf("%s", output);
+
 
             //printf("Processei o comando e pus no buffer\n");
         }
@@ -227,7 +241,7 @@ int main(int argc, char** argv)  {
 
             input = produzir(OP_CREDITAR, atoi(args[1]), atoi(args[2]), -1, paipeName);
 
-			printf("estrutura:\noperacao: %d\nConta: %d\nValor: %d\nPATH: %s\n", input.operacao, input.idConta, input.valor, input.nome);
+			printf("estrutura:\noperacao: %d\nConta: %d\nValor: %d\nPATH: %s\n\n\n", input.operacao, input.idConta, input.valor, input.nome);
 
 			//printf("Vou receber comando do pipe\n");
 
@@ -235,6 +249,16 @@ int main(int argc, char** argv)  {
 
             	perror("write: ");
             }
+			int fdPipeT;
+			if ((fdPipeT = open(paipeName ,O_RDONLY)) == -1)  {
+		        perror("open: ");
+				exit(-1);
+		    }
+
+			read(fdPipeT, output, BUFFER_SIZE);
+
+			printf("%s", output);
+
 
         }
 
@@ -262,6 +286,16 @@ int main(int argc, char** argv)  {
 
             	perror("write: ");
             }
+			int fdPipeT;
+			if ((fdPipeT = open(paipeName ,O_RDONLY)) == -1)  {
+		        perror("open: ");
+				exit(-1);
+		    }
+
+			read(fdPipeT, output, BUFFER_SIZE);
+
+			printf("%s", output);
+
         }
 
         /* Transferir */
@@ -288,6 +322,18 @@ int main(int argc, char** argv)  {
 
             	perror("write: ");
             }
+
+			int fdPipeT;
+
+			if ((fdPipeT = open(paipeName ,O_RDONLY)) == -1)  {
+		        perror("open: ");
+				exit(-1);
+		    }
+
+			read(fdPipeT, output, BUFFER_SIZE);
+
+			printf("%s", output);
+
         }
 
         else

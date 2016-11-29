@@ -36,13 +36,15 @@ int main (int argc, char** argv)  {
 
     char *args[MAXARGS + 1];
 
-    char buffer[BUFFER_SIZE];
+    // char buffer[BUFFER_SIZE];
 
     int numFilhos = 0;
 
     inicializarContas();
 
     int pip;
+
+    printf("Bem-vinda/o ao i-banco\n\n");
 
     if((pip = mkfifo("/tmp/i-banco-pipe", 0777)) == -1)  {
     	perror("mkfifo: ");
@@ -102,8 +104,6 @@ int main (int argc, char** argv)  {
     }
 
 
-    printf("Bem-vinda/o ao i-banco\n\n");
-
     /* A funcao signal() recebe um signal SIGUSR1, predefinido pelo utilizador.
      * Como estamos no processo pai, define-se SIG_IGN para tratar o sinal, ou seja, ignora-o.*/
 
@@ -114,32 +114,35 @@ int main (int argc, char** argv)  {
 
     while (1)  {
 
-        printf("entrei no while\n");
+        //printf("entrei no while\n");
 
-        int numargs;
+        // int numargs;
 
-        printf("vou chegar ao numargs\n");
+        //printf("vou chegar ao numargs\n");
 
         //numargs = readLineArguments(args, MAXARGS+1, buffer, BUFFER_SIZE);
 
-        printf("passei o numargs\n");
+        //printf("passei o numargs\n");
         int error;
 
         comando_t comando;
 
-        printf("vou receber um comando\n");
+        //printf("vou receber um comando\n");
 
         if ((error = read(paipe, &comando, sizeof(comando_t))) == -1)  {
-
         	perror("read: ");
             exit(-1);
         }
-        printf("recebi o comando e vou escreve-lo\n");
+        //printf("recebi o comando e vou escreve-lo\n");
 
-        printf("estrutura:\noperacao: %d\nConta: %d\nValor: %d\nPATH: %s\n", comando.operacao, comando.idConta, comando.valor, comando.nome);
+        printf("estrutura:\noperacao: %d\nConta: %d\nValor: %d\nPATH: %s\n\n\n", comando.operacao, comando.idConta, comando.valor, comando.nome);
 
+        if (comando.operacao == OP_LERSALDO || comando.operacao == OP_CREDITAR || comando.operacao == OP_DEBITAR || comando.operacao == OP_TRANSFERIR)  {
 
-        writeBuf(comando);
+            writeBuf(comando);
+
+        }
+
 
         /*if (comparar sair ou sair agora)
 
@@ -164,12 +167,9 @@ int main (int argc, char** argv)  {
 
         /* EOF (end of file) do stdin ou comando "sair" */
 
-       	if  ((numargs < 0) ||
-             (numargs > 0 &&
-             (strcmp(args[0], COMANDO_SAIR) == 0)))  {
+       	if  (comando.operacao == OP_SAIR)  {
 
-
-            if (numargs > 1 && strcmp(args[1], "agora") == 0)  {
+            if (comando.operacao == OP_SAIR_AGORA)  {
 
                 /* A funcao kill() envia um signal a todos os processos, incluindo o processo pai.*/
 
@@ -184,18 +184,6 @@ int main (int argc, char** argv)  {
 
                 input = produzir(OP_SAIR, -1, -1, -1, "sair");
                 writeBuf(input);
-            }
-
-    	    for(i = 0; i < NUM_TRABALHADORAS; i++)  {
-
-                if((rc = pthread_join(tid[i], NULL)) != 0)  {
-
-                    errno = rc;
-
-                    perror("pthread_join: ");
-
-                    exit(EXIT_FAILURE);
-                }
             }
 
             int estado;
@@ -253,7 +241,7 @@ int main (int argc, char** argv)  {
         }
 
 
-        else if (numargs == 0)
+        else if (comando.operacao == -1)
 
             /* Nenhum argumento; ignora e volta a pedir */
 
@@ -262,13 +250,14 @@ int main (int argc, char** argv)  {
 
         /* Simular */
 
-        else if (strcmp(args[0], COMANDO_SIMULAR) == 0)  {
+        else if (comando.operacao == OP_SIMULAR)  {
+
             int numAnos;
             int pid;
-            if (numargs < 2)  {
-                printf("%s: Sintaxe inválida, tente de novo.\n\n", COMANDO_SIMULAR);
-                continue;
-            }
+            // if (numargs < 2)  {
+            //     printf("%s: Sintaxe inválida, tente de novo.\n\n", COMANDO_SIMULAR);
+            //     continue;
+            // }
             numAnos = atoi(args[1]) + 1;
             testMutexLock(&mutexCount);
 
@@ -298,7 +287,7 @@ int main (int argc, char** argv)  {
              * o signal SIGUSR1, que e definido pelo utilizador. */
 
             if (signal(SIGUSR1,handler) == SIG_ERR)
-                    perror("signal: ");
+                perror("signal: ");
 
             if (pid == 0)  {
 
@@ -308,7 +297,7 @@ int main (int argc, char** argv)  {
                 close(1);  //ou close(fd) ???
 
                 int fileDes, aux;
-                char fileName[50];
+                char fileName[1024];
 
                 if ((fileDes = snprintf(fileName, sizeof(fileName), "/tmp/i-banco-sim-%d.txt", getpid())) >= sizeof(fileName))  {
                     printf("Erro sprintf\n");
@@ -331,7 +320,7 @@ int main (int argc, char** argv)  {
             continue;
         }
 
-        else
+        else if(comando.operacao > 6)
 
             printf("Comando desconhecido. Tente de novo.\n");
 

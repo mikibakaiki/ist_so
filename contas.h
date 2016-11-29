@@ -47,7 +47,7 @@ typedef struct  {
 	int idConta;
 	int valor;
 	int idContaDestino;
-	char nome[50];
+	char nome[1024];
 
 } comando_t;
 
