@@ -323,7 +323,7 @@ int transferir(int idConta, int idContaDest, int valor, int num)  {
 
 /* Funcao que recebe os 3 argumentos iniciais e os coloca na estrutura comando_t, retornando-a. */
 
-comando_t produzir(int op, int idOri, int val, int idDest, char nome[50])  {
+comando_t produzir(int op, int idOri, int val, int idDest, char *nome)  {
 
   	comando_t i;
 
@@ -337,7 +337,8 @@ comando_t produzir(int op, int idOri, int val, int idDest, char nome[50])  {
 
 	  	i.idContaDestino = idDest;
 
-	  	strcpy(nome, i.nome);
+	  	strcpy(i.nome, nome);
+
 	}
 
 	else  {
@@ -350,7 +351,7 @@ comando_t produzir(int op, int idOri, int val, int idDest, char nome[50])  {
 
 		i.idContaDestino = val;
 
-		strcpy(nome, i.nome);
+		strcpy(i.nome, nome);
 	}
 
   	return i;
@@ -383,6 +384,8 @@ void writeBuf(comando_t item)  {
 
 void* thr_consumer (void *arg) {
 
+    printf("thr_consumer\n");
+
     int t_num, paipe;
 
     t_num = *((int *)arg) + 1;
@@ -392,6 +395,8 @@ void* thr_consumer (void *arg) {
 		comando_t item;
 
 		item = readBuf();
+
+        printf("Acabei de ler e vou consumir\n");
 
 		consume(item,t_num);
 
@@ -436,6 +441,8 @@ comando_t readBuf()  {
 
 int consume(comando_t item, int num)  {
 
+    printf("cheguei ao consume\n");
+
 	int saldo, rc;
 
 	if (item.operacao == OP_LERSALDO)  {
@@ -463,6 +470,8 @@ int consume(comando_t item, int num)  {
 	}
 
 	if (item.operacao == OP_DEBITAR)  {
+
+        printf("entrei no debitar\n");
 
 		if (debitar (item.idConta, item.valor, num) < 0)
 

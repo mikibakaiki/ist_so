@@ -49,23 +49,21 @@ int main(int argc, char** argv)  {
     if ((paipe = snprintf(paipeName, sizeof(paipeName), "/tmp/pipe-terminal-%d", getpid())) >= sizeof(paipeName))  {
         printf("Erro sprintf\n");
     }
-    
-    int pip;
 
-    printf("Olá Joao e Carolina\n");
+	printf("pipe name: %s\n", paipeName);
+    int pip;
 
     if((pip = mkfifo(paipeName, 0777)) == -1)  {
 
     	perror("mkfifo: ");
     }
 
-    printf("passei o fifo\n");
-
-/*    int fdPipeT;
+/*  int fdPipeT;
 
     if ((fdPipeT = open(paipeName ,O_RDONLY)) == -1)  {
 
         perror("open: ");
+		exit(-1);
     }
 
     printf("fdPipeT %d", fdPipeT);
@@ -75,52 +73,11 @@ int main(int argc, char** argv)  {
     int fdPipeP;
 
     if ((fdPipeP = open(argv[1], O_WRONLY)) == -1)  {
-    	printf("fdPipeP : %d\n\n", errno);
 
     	perror("open: ");
     }
 
-    printf("Passei o open 2\n");
-
-    int rc, t;
-
-    if ((rc = pthread_mutex_init(&cadeadoC, NULL)) != 0)  {
-
-        errno = rc;
-
-        perror("pthread_mutex_init: ");
-    }
-
- 	if (sem_init(&escrita, 1, CMD_BUFFER_DIM) == -1)  {
-
-     	perror("sem_init: ");
-
- 	}
-
-    if (sem_init(&leitura, 1, 0) == -1)  {
-
-     	perror("sem_init: ");
-    }
-
-    pthread_t tid[NUM_TRABALHADORAS];
-
-    int t_num[NUM_TRABALHADORAS]; /*aux*/
-
-    for(t = 0; t < NUM_TRABALHADORAS; t++)  {
-
-        t_num[t] = t;
-
-        rc = pthread_create(&tid[t], NULL, thr_consumer,(void *) &t_num[t]);
-
-        if(rc != 0)  {
-
-        	errno = rc;
-
-        	perror("pthread_create: ");
-
-        	exit(EXIT_FAILURE);
-        }
-    }
+    int rc;
 
     printf("Bem-vinda/o ao i-banco\n\n");
 
@@ -162,18 +119,6 @@ int main(int argc, char** argv)  {
                 input = produzir(OP_SAIR, -1, -1, -1, "sair");
 
                 writeBuf(input);
-            }
-
-    	    for(i = 0; i < NUM_TRABALHADORAS; i++)  {
-
-                if((rc = pthread_join(tid[i], NULL)) != 0)  {
-
-                    errno = rc;
-
-                    perror("pthread_join: ");
-
-                    exit(EXIT_FAILURE);
-                }
             }
 
             int estado;
@@ -254,14 +199,16 @@ int main(int argc, char** argv)  {
 
             input = produzir(OP_DEBITAR, atoi(args[1]), atoi(args[2]), -1, paipeName);
 
-            printf("Vou receber comando do pipe\n");
+			printf("estrutura:\noperacao: %d\nConta: %d\nValor: %d\nPATH: %s\n", input.operacao, input.idConta, input.valor, input.nome);
+
+			//printf("Vou receber comando do pipe\n");
 
             if((error = write(fdPipeP, &input, sizeof(comando_t))) == -1)  {
-            	
+
             	perror("write: ");
             }
 
-            printf("Processei o comando e pus no buffer\n");
+            //printf("Processei o comando e pus no buffer\n");
         }
 
         /* Creditar */
@@ -276,10 +223,18 @@ int main(int argc, char** argv)  {
             }
 
             comando_t input;
+			int error;
 
             input = produzir(OP_CREDITAR, atoi(args[1]), atoi(args[2]), -1, paipeName);
 
-            writeBuf(input);
+			printf("estrutura:\noperacao: %d\nConta: %d\nValor: %d\nPATH: %s\n", input.operacao, input.idConta, input.valor, input.nome);
+
+			//printf("Vou receber comando do pipe\n");
+
+            if((error = write(fdPipeP, &input, sizeof(comando_t))) == -1)  {
+
+            	perror("write: ");
+            }
 
         }
 
@@ -295,10 +250,18 @@ int main(int argc, char** argv)  {
             }
 
             comando_t input;
+			int error;
 
             input = produzir(OP_LERSALDO, atoi(args[1]), -1, -1, paipeName);
 
-            writeBuf(input);
+			printf("estrutura:\noperacao: %d\nConta: %d\nValor: %d\nPATH: %s\n", input.operacao, input.idConta, input.valor, input.nome);
+
+			//printf("Vou receber comando do pipe\n");
+
+            if((error = write(fdPipeP, &input, sizeof(comando_t))) == -1)  {
+
+            	perror("write: ");
+            }
         }
 
         /* Transferir */
@@ -313,10 +276,18 @@ int main(int argc, char** argv)  {
             }
 
             comando_t input;
+			int error;
 
             input = produzir(OP_TRANSFERIR, atoi(args[1]), atoi(args[2]), atoi(args[3]), paipeName);
 
-            writeBuf(input);
+			printf("estrutura:\noperacao: %d\nConta: %d\nValor: %d\nPATH: %s\n", input.operacao, input.idConta, input.valor, input.nome);
+
+			//printf("Vou receber comando do pipe\n");
+
+            if((error = write(fdPipeP, &input, sizeof(comando_t))) == -1)  {
+
+            	perror("write: ");
+            }
         }
 
         else
@@ -325,4 +296,3 @@ int main(int argc, char** argv)  {
 
     }
 }
-

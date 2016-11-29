@@ -41,21 +41,24 @@ int main (int argc, char** argv)  {
     int numFilhos = 0;
 
     inicializarContas();
-    
+
     int pip;
 
     if((pip = mkfifo("/tmp/i-banco-pipe", 0777)) == -1)  {
     	perror("mkfifo: ");
+        exit(-1);
     }
 
     int paipe;
 
     if((paipe = open("/tmp/i-banco-pipe", O_RDONLY) ) == -1)  {
     	perror("open: ");
+        exit(-1);
     }
 
-    if ((fd = open("/tmp/log.txt",O_WRONLY | O_CREAT | O_TRUNC, S_IRWXU | S_IRWXG | S_IRWXO )) == -1)  {
+    if ((fd = open("/tmp/log.txt", O_WRONLY | O_CREAT | O_TRUNC, S_IRWXU | S_IRWXG | S_IRWXO )) == -1)  {
         perror("open: ");
+        exit(-1);
     }
 
     int rc, t;
@@ -111,30 +114,42 @@ int main (int argc, char** argv)  {
 
     while (1)  {
 
+        printf("entrei no while\n");
+
         int numargs;
 
-        numargs = readLineArguments(args, MAXARGS+1, buffer, BUFFER_SIZE);
+        printf("vou chegar ao numargs\n");
 
+        //numargs = readLineArguments(args, MAXARGS+1, buffer, BUFFER_SIZE);
+
+        printf("passei o numargs\n");
         int error;
 
         comando_t comando;
-        
+
+        printf("vou receber um comando\n");
+
         if ((error = read(paipe, &comando, sizeof(comando_t))) == -1)  {
 
         	perror("read: ");
+            exit(-1);
         }
+        printf("recebi o comando e vou escreve-lo\n");
+
+        printf("estrutura:\noperacao: %d\nConta: %d\nValor: %d\nPATH: %s\n", comando.operacao, comando.idConta, comando.valor, comando.nome);
+
 
         writeBuf(comando);
 
+        /*if (comparar sair ou sair agora)
 
+            if(sair agora)
 
+        else if(simular)
 
+        else if(threads trabalhadoras)
 
-
-
-
-
-
+        else (comando desconhecido)*/
 
 
 
@@ -243,10 +258,6 @@ int main (int argc, char** argv)  {
             /* Nenhum argumento; ignora e volta a pedir */
 
             continue;
-
-
-
-
 
 
         /* Simular */

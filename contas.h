@@ -38,6 +38,7 @@
 #define OP_SAIR 3
 #define OP_SAIR_AGORA 4
 #define OP_TRANSFERIR 5
+#define OP_SIMULAR 6
 
 
 typedef struct  {
