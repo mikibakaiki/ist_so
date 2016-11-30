@@ -235,7 +235,7 @@ void simular(int numAnos)  {
 		for (idConta = 1; idConta <= NUM_CONTAS; idConta++)  {
 
 			saldo = lerSaldoTransf(idConta, 0);
-
+        
 			if (ano != 0)  {
 
 		  		creditarTransf(idConta, saldo*TAXAJURO);
@@ -384,7 +384,7 @@ void writeBuf(comando_t item)  {
 
 void* thr_consumer (void *arg) {
 
-    printf("thr_consumer\n");
+    //printf("thr_consumer\n");
 
     int t_num;
 
@@ -396,7 +396,7 @@ void* thr_consumer (void *arg) {
 
 		item = readBuf();
 
-        printf("Acabei de ler e vou consumir\n");
+        //printf("Acabei de ler e vou consumir\n");
 
 		consume(item,t_num);
 
@@ -433,16 +433,16 @@ comando_t readBuf()  {
 
 int consume(comando_t item, int num)  {
 
-    printf("cheguei ao consume\n");
+    //printf("cheguei ao consume\n");
 
     int paipe, pipeWrite;
-
+    //printf("check\n");
     if((paipe = open(item.nome, O_WRONLY)) == -1) {
         perror("open: ");
         exit(-1);
     }
 
-    printf("passei o open %d\n\n", paipe);
+    //printf("passei o open %d\n\n", paipe);
 
 	int saldo, rc;
     char text[1024];
@@ -476,14 +476,16 @@ int consume(comando_t item, int num)  {
         }
 
     	else  {
+            if ((pipeWrite = snprintf(text, sizeof(text), "%s(%d, %d): OK\n\n", COMANDO_CREDITAR, item.idConta, item.valor)) >= sizeof(text))  {
+                printf("Erro snprintf\n");
+            }
 
-            printf("%s(%d, %d): OK\n\n", COMANDO_CREDITAR, item.idConta, item.valor);
         }
     }
 
 	if (item.operacao == OP_DEBITAR)  {
 
-        printf("entrei no debitar\n");
+        //printf("entrei no debitar\n");
 
 		if (debitar (item.idConta, item.valor, num) < 0)  {
 
@@ -494,7 +496,9 @@ int consume(comando_t item, int num)  {
 
         else  {
 
-            printf("%s(%d, %d): OK\n\n", COMANDO_DEBITAR, item.idConta, item.valor);
+            if ((pipeWrite = snprintf(text, sizeof(text), "%s(%d, %d): OK\n\n", COMANDO_DEBITAR, item.idConta, item.valor)) >= sizeof(text))  {
+                printf("Erro snprintf\n");
+            }
         }
 	}
 
@@ -509,7 +513,9 @@ int consume(comando_t item, int num)  {
 
 		else  {
 
-			printf("transferir(%d, %d, %d): OK\n\n", item.idConta, item.idContaDestino, item.valor);
+            if ((pipeWrite = snprintf(text, sizeof(text), "transferir(%d, %d, %d): OK\n\n", item.idConta, item.idContaDestino, item.valor)) >= sizeof(text))  {
+                printf("Erro snprintf\n");
+            }
         }
     }
 
@@ -517,13 +523,12 @@ int consume(comando_t item, int num)  {
 
 		pthread_exit(EXIT_SUCCESS);
 	}
-    printf("size of text: %s\n\n", text);
+    //printf("size of text: %s\n\n", text);
     write(paipe, text, sizeof(text));
-    printf("ja mandei os dados\n\n");
+    //printf("ja mandei os dados\n\n");
 
-    close(paipe);
+    close(paipe);  /*testar erro*/
 
-    /* Aqui deve levar o write para poder escrever que ja concluiu o comando*/
 
 	testMutexLock(&mutexCount);
 

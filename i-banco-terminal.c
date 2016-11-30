@@ -55,22 +55,12 @@ int main(int argc, char** argv)  {
 	printf("pipe name: %s\n", paipeName);
     int pip;
 
+	unlink(paipeName);  /*Falta fazer o erro*/
+
     if((pip = mkfifo(paipeName, 0777)) == -1)  {
 
     	perror("mkfifo: ");
     }
-
-/*  int fdPipeT;
-
-    if ((fdPipeT = open(paipeName ,O_RDONLY)) == -1)  {
-
-        perror("open: ");
-		exit(-1);
-    }
-
-    printf("fdPipeT %d", fdPipeT);
-
-    printf("passei o open 1\n");*/
 
     int fdPipeP;
 
@@ -103,12 +93,12 @@ int main(int argc, char** argv)  {
              (strcmp(args[0], COMANDO_SAIR) == 0)))  {
 
 
-            // if (numargs > 1 && strcmp(args[1], "agora") == 0)  {
+            //if (numargs > 1 && strcmp(args[1], "agora") == 0)  {
 
-            //      A funcao kill() envia um signal a todos os processos, incluindo o processo pai.
+            /*A funcao kill() envia um signal a todos os processos, incluindo o processo pai.*/
 
-            //     kill(0, SIGUSR1);
-            // }
+            	//kill(0, SIGUSR1);
+            //}
 
         	printf("i-banco vai terminar.\n--\n");
 
@@ -201,7 +191,7 @@ int main(int argc, char** argv)  {
 
             input = produzir(OP_DEBITAR, atoi(args[1]), atoi(args[2]), -1, paipeName);
 
-			printf("estrutura:\noperacao: %d\nConta: %d\nValor: %d\nPATH: %s\n\n\n", input.operacao, input.idConta, input.valor, input.nome);
+			//printf("estrutura:\noperacao: %d\nConta: %d\nValor: %d\nPATH: %s\n\n\n", input.operacao, input.idConta, input.valor, input.nome);
 
 			//printf("Vou receber comando do pipe\n");
 
@@ -218,6 +208,10 @@ int main(int argc, char** argv)  {
 		    }
 
 			read(fdPipeT, output, BUFFER_SIZE);
+
+			if((error = close(fdPipeT)) == -1)  {
+				perror("close: ");
+			}
 
 			printf("%s", output);
 
@@ -241,7 +235,7 @@ int main(int argc, char** argv)  {
 
             input = produzir(OP_CREDITAR, atoi(args[1]), atoi(args[2]), -1, paipeName);
 
-			printf("estrutura:\noperacao: %d\nConta: %d\nValor: %d\nPATH: %s\n\n\n", input.operacao, input.idConta, input.valor, input.nome);
+			//printf("estrutura:\noperacao: %d\nConta: %d\nValor: %d\nPATH: %s\n\n\n", input.operacao, input.idConta, input.valor, input.nome);
 
 			//printf("Vou receber comando do pipe\n");
 
@@ -257,6 +251,9 @@ int main(int argc, char** argv)  {
 
 			read(fdPipeT, output, BUFFER_SIZE);
 
+			if((error = close(fdPipeT)) == -1)  {
+				perror("close: ");
+			}
 			printf("%s", output);
 
 
@@ -278,7 +275,7 @@ int main(int argc, char** argv)  {
 
             input = produzir(OP_LERSALDO, atoi(args[1]), -1, -1, paipeName);
 
-			printf("estrutura:\noperacao: %d\nConta: %d\nValor: %d\nPATH: %s\n", input.operacao, input.idConta, input.valor, input.nome);
+			//printf("estrutura:\noperacao: %d\nConta: %d\nValor: %d\nPATH: %s\n", input.operacao, input.idConta, input.valor, input.nome);
 
 			//printf("Vou receber comando do pipe\n");
 
@@ -286,7 +283,9 @@ int main(int argc, char** argv)  {
 
             	perror("write: ");
             }
+
 			int fdPipeT;
+
 			if ((fdPipeT = open(paipeName ,O_RDONLY)) == -1)  {
 		        perror("open: ");
 				exit(-1);
@@ -294,6 +293,9 @@ int main(int argc, char** argv)  {
 
 			read(fdPipeT, output, BUFFER_SIZE);
 
+			if((error = close(fdPipeT)) == -1)  {
+				perror("close: ");
+			}
 			printf("%s", output);
 
         }
@@ -314,7 +316,7 @@ int main(int argc, char** argv)  {
 
             input = produzir(OP_TRANSFERIR, atoi(args[1]), atoi(args[2]), atoi(args[3]), paipeName);
 
-			printf("estrutura:\noperacao: %d\nConta: %d\nValor: %d\nPATH: %s\n", input.operacao, input.idConta, input.valor, input.nome);
+			//printf("estrutura:\noperacao: %d\nConta: %d\nValor: %d\nPATH: %s\n", input.operacao, input.idConta, input.valor, input.nome);
 
 			//printf("Vou receber comando do pipe\n");
 
@@ -332,9 +334,71 @@ int main(int argc, char** argv)  {
 
 			read(fdPipeT, output, BUFFER_SIZE);
 
+			if((error = close(fdPipeT)) == -1)  {
+				perror("close: ");
+			}
 			printf("%s", output);
 
         }
+		/* Simular */
+
+		else if (strcmp(args[0], COMANDO_SIMULAR) == 0)  {
+
+            if (numargs < 2)  {
+
+                printf("%s: Sintaxe inválida, tente de novo.\n\n", COMANDO_SIMULAR);
+
+                continue;
+            }
+
+            comando_t input;
+			int error;
+
+            input = produzir(OP_SIMULAR, -1, atoi(args[1]), -1, paipeName);
+
+			printf("estrutura:\noperacao: %d\nConta: %d\nValor: %d\nPATH: %s\n\n", input.operacao, input.idConta, input.valor, input.nome);
+
+			//printf("Vou receber comando do pipe\n");
+
+            if((error = write(fdPipeP, &input, sizeof(comando_t))) == -1)  {
+
+            	perror("write: ");
+            }
+
+			/*int fdPipeT;
+
+			if ((fdPipeT = open(paipeName ,O_RDONLY)) == -1)  {
+		        perror("open: ");
+				exit(-1);
+		    }
+
+			read(fdPipeT, output, BUFFER_SIZE);
+
+			if((error = close(fdPipeT)) == -1)  {
+				perror("close: ");
+			}*/
+
+        }
+
+
+		/* Sair Terminal */
+
+		else if (strcmp(args[0], COMANDO_SAIR_TERMINAL) == 0)  {
+
+			int error;
+
+			if((error = unlink(paipeName)) == -1)  {
+
+				perror("unlink: ");
+			}
+
+			if((error = close(fdPipeP)) == -1)  {
+				perror("close: ");
+			}
+
+			printf("--\ni-banco-terminal terminou.\n--\n");
+			exit(EXIT_SUCCESS);
+		}
 
         else
 

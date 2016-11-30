@@ -25,7 +25,6 @@
 #include <sys/stat.h>
 #include <string.h>
 
-#define MAXARGS 4
 #define BUFFER_SIZE 100
 
 #define NUM_TRABALHADORAS 3  /*numero de threads*/
@@ -34,7 +33,7 @@
 
 int main (int argc, char** argv)  {
 
-    char *args[MAXARGS + 1];
+    //char *args[MAXARGS + 1];
 
     // char buffer[BUFFER_SIZE];
 
@@ -45,6 +44,8 @@ int main (int argc, char** argv)  {
     int pip;
 
     printf("Bem-vinda/o ao i-banco\n\n");
+
+    unlink("/tmp/i-banco-pipe");  /*falta ver o erro!*/
 
     if((pip = mkfifo("/tmp/i-banco-pipe", 0777)) == -1)  {
     	perror("mkfifo: ");
@@ -116,7 +117,7 @@ int main (int argc, char** argv)  {
 
         //printf("entrei no while\n");
 
-        // int numargs;
+        //int numargs;
 
         //printf("vou chegar ao numargs\n");
 
@@ -128,11 +129,29 @@ int main (int argc, char** argv)  {
         comando_t comando;
 
         //printf("vou receber um comando\n");
+        int errClose;
 
-        if ((error = read(paipe, &comando, sizeof(comando_t))) == -1)  {
-        	perror("read: ");
-            exit(-1);
+        error = read(paipe, &comando, sizeof(comando_t));
+
+        if (error == 0)  {
+
+            if((errClose = close(paipe)) == -1)  {
+                perror("close: ");
+                exit(EXIT_FAILURE);
+            }
+
+            if((paipe = open("/tmp/i-banco-pipe", O_RDONLY) ) == -1)  {
+                perror("open: ");
+                exit(EXIT_FAILURE);
+            }
+            continue;
         }
+        else if(error == -1)
+            perror("read: ");
+
+
+        //printf("recebi um comando\n");
+
         //printf("recebi o comando e vou escreve-lo\n");
 
         printf("estrutura:\noperacao: %d\nConta: %d\nValor: %d\nPATH: %s\n\n\n", comando.operacao, comando.idConta, comando.valor, comando.nome);
@@ -254,11 +273,8 @@ int main (int argc, char** argv)  {
 
             int numAnos;
             int pid;
-            // if (numargs < 2)  {
-            //     printf("%s: Sintaxe inválida, tente de novo.\n\n", COMANDO_SIMULAR);
-            //     continue;
-            // }
-            numAnos = atoi(args[1]) + 1;
+            numAnos = comando.valor + 1;
+
             testMutexLock(&mutexCount);
 
 
@@ -279,6 +295,8 @@ int main (int argc, char** argv)  {
 
             pid = fork();
 
+            //printf("PID = %d\n\n", pid);
+
             if (pid == -1)  {
                 perror("fork: ");
             }
@@ -294,7 +312,7 @@ int main (int argc, char** argv)  {
                 /* Processo filho. */
 
                 close(fd);
-                close(1);  //ou close(fd) ???
+                close(1);
 
                 int fileDes, aux;
                 char fileName[1024];
@@ -309,12 +327,17 @@ int main (int argc, char** argv)  {
 
                 aux = dup2(newF, 1);
 
+                //printf("vou simular\n");
+
                 simular(numAnos);
+                //printf("acabei de simular\n");
                 close(aux);
                 exit(EXIT_SUCCESS);
             }
 
             /* Processo pai. */
+            printf("Simulacao de %d anos iniciada em background\n", comando.valor);
+
             pidFilhos[numFilhos] = pid;
             numFilhos ++;
             continue;

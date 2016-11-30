@@ -31,14 +31,16 @@
 #define COMANDO_SIMULAR "simular"
 #define COMANDO_SAIR "sair"
 #define COMANDO_TRANSFERIR "transferir"
+#define COMANDO_SAIR_TERMINAL "sair-terminal"
 
 #define OP_LERSALDO 0
 #define OP_CREDITAR 1
 #define OP_DEBITAR 2
-#define OP_SAIR 3
-#define OP_SAIR_AGORA 4
-#define OP_TRANSFERIR 5
-#define OP_SIMULAR 6
+#define OP_SIMULAR 3
+#define OP_SAIR 4
+#define OP_SAIR_AGORA 5
+#define OP_TRANSFERIR 6
+
 
 
 typedef struct  {
