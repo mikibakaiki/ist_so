@@ -40,14 +40,14 @@ int main (int argc, char** argv)  {
 
     int error;  /* Variavel que testa erros */
     int pipeD;  /* /tmp/i-banco-pipe pipe descriptor */
-    int fd;     /* /tmp/log.txt file descriptor */
+
 
     pthread_t tid[NUM_TRABALHADORAS];   /* Vector que guarda as ids das threads */
     int t_num[NUM_TRABALHADORAS];       /* Vector que guarda o numero de threads */
 
     printf("Bem-vinda/o ao i-banco\n\n");
 
-    if ((error = unlink("/tmp/i-banco-pipe")) == -1)  {
+    if ((error = unlink("/tmp/i-banco-pipe")) == -1 && errno != ENOENT)  {
         perror("unlink i-banco-pipe: ");
     }
 
@@ -56,7 +56,7 @@ int main (int argc, char** argv)  {
         exit(EXIT_FAILURE);
     }
 
-    if ((pipeD = open("/tmp/i-banco-pipe", O_RDONLY) ) == -1)  {
+    if ((pipeD = open("/tmp/i-banco-pipe", O_RDONLY)) == -1)  {
     	perror("open i-banco-pipe i-banco.c: ");
         exit(EXIT_FAILURE);
     }
@@ -66,7 +66,7 @@ int main (int argc, char** argv)  {
         exit(EXIT_FAILURE);
     }
 
-
+    printf("fd do OPEN e %d\n", fd);
 
     if ((error = pthread_mutex_init(&cadeadoC, NULL)) != 0)  {
         errno = error;
@@ -275,7 +275,7 @@ int main (int argc, char** argv)  {
                     exit(EXIT_FAILURE);
                 }
 
-                int numB, aux;
+                int numB;    /* Variavel que guarda numero de bytes escritos */
                 char fileName[1024];
 
                 if ((numB = snprintf(fileName, sizeof(fileName), "/tmp/i-banco-sim-%d.txt", getpid())) >= sizeof(fileName))  {
@@ -286,15 +286,24 @@ int main (int argc, char** argv)  {
                     perror("open do processo filho: ");
                 }
                 //printf("newf e %d\n\n", newF);
-                aux = dup2(newF, 1);
+                if ((error = dup2(newF, 1)) == -1)  {
+                    perror("dup2: ");
+                }
                 //printf("aux e %d\n\n", aux);
 
                 //printf("vou simular\n");
 
                 simular(numAnos);
+
                 //printf("acabei de simular\n");
-                close(aux);  /*tenho que fechar este e o newF ??? */
-                close(newF);
+
+                /*tenho que fechar este e o newF ??? */
+
+                if((error = close(newF)) == -1)  {
+                    perror("close: ");
+                    exit(EXIT_FAILURE);
+                }
+
                 exit(EXIT_SUCCESS);
             }
 

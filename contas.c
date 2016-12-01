@@ -28,7 +28,9 @@
 /***   CONSTANTES   ***/
 int buff_write_idx = 0, buff_read_idx = 0, count = 0;
 
-int numB, error;
+int numB;   /* Variavel que guarda numero de bytes escritos */
+int error;  /* Variavel que testa erros */
+int fd;     /* /tmp/log.txt file descriptor */
 
 /* Flag para verificar signals. */
 int sig_find = 0;
@@ -43,30 +45,30 @@ int contaExiste(int idConta)  {
 
 void inicializarContas()  {
 
-  	int i, rc;
+  	int i;
 
   	for (i=0; i<NUM_CONTAS; i++)  {
 
 		contasSaldos[i] = 0;
 
-  		if ((rc = pthread_mutex_init(&mutexContas[i], NULL)) != 0)  {
+  		if ((error = pthread_mutex_init(&mutexContas[i], NULL)) != 0)  {
 
-        	errno = rc;
+        	errno = error;
 
         	perror("pthread_mutex_init: ");
 		}
 	}
 
-  	if ((rc = pthread_mutex_init(&mutexCount, NULL)) != 0)  {
+  	if ((error = pthread_mutex_init(&mutexCount, NULL)) != 0)  {
 
-		errno = rc;
+		errno = error;
 
     	perror("pthread_mutex_init: ");
     }
 
-   if ((rc = pthread_cond_init(&cond, NULL)) != 0)  {
+   if ((error = pthread_cond_init(&cond, NULL)) != 0)  {
 
-        errno = rc;
+        errno = error;
 
         perror("pthread_cond_init: ");
     }
@@ -80,7 +82,7 @@ int debitar(int idConta, int valor, int num)  {
 
   	if (!contaExiste(idConta) || valor < 0)  {
 
-        if ((numB = snprintf(buf, sizeof(buf), "%d: %s(%d, %d) - ERRO\n", num, COMANDO_DEBITAR, idConta, valor)) >=sizeof(buf))  {
+        if ((numB = snprintf(buf, sizeof(buf), "%d: %s(%d, %d) - ERRO\n", num, COMANDO_DEBITAR, idConta, valor)) >= sizeof(buf))  {
             printf("Erro snprintf\n");
         }
 
@@ -94,7 +96,7 @@ int debitar(int idConta, int valor, int num)  {
 
   	if (contasSaldos[idConta - 1] < valor)  {
 
-        if ((numB = snprintf(buf, sizeof(buf), "%d: %s(%d, %d) - ERRO\n", num, COMANDO_DEBITAR, idConta, valor)) >=sizeof(buf))  {
+        if ((numB = snprintf(buf, sizeof(buf), "%d: %s(%d, %d) - ERRO\n", num, COMANDO_DEBITAR, idConta, valor)) >= sizeof(buf))  {
             printf("Erro snprintf\n");
         }
 
@@ -160,7 +162,7 @@ int creditar(int idConta, int valor, int num)  {
         if ((numB = snprintf(buf, sizeof(buf), "%d: %s(%d, %d) - ERRO\n", num, COMANDO_CREDITAR, idConta, valor)) >= sizeof(buf))  {
             printf("Erro snprintf\n");
         }
-
+        printf("fd = %d\n", fd);
         if ((error = write(fd, buf, strlen(buf))) == -1)  {
             perror("write_creditar: ");
         }
@@ -506,16 +508,16 @@ int consume(comando_t item, int num)  {
 
     //printf("cheguei ao consume\n");
 
-    int paipe;
+    int pipeTerm;
     //printf("check\n");
-    if((paipe = open(item.nome, O_WRONLY)) == -1) {
+    if((pipeTerm = open(item.nome, O_WRONLY)) == -1) {
         perror("open do consume: ");
         exit(-1);
     }
 
-    //printf("passei o open %d\n\n", paipe);
+    //printf("passei o open %d\n\n", pipeTerm);
 
-	int saldo, rc;
+	int saldo;
     char text[1024];
 
 	if (item.operacao == OP_LERSALDO)  {
@@ -591,18 +593,19 @@ int consume(comando_t item, int num)  {
     }
 
 	if (item.operacao == OP_SAIR)  {
-        close(paipe);
+        close(pipeTerm);
 		pthread_exit(EXIT_SUCCESS);
 	}
 
-    if ((error = write(paipe, text, sizeof(text))) == -1)  {
+    if ((error = write(pipeTerm, text, sizeof(text))) == -1)  {
+
         // if(errno == EPIPE)  {
         //     int err;
         //     printf("Perdida conexao com i-banco.\n");
         //     printf("A tentar conexao...\n");
-        //     err = close(paipe);
+        //     err = close(pipeTerm);
         //
-        //     if ((open(paipe, O_WRONLY)) == -1)  {
+        //     if ((open(pipeTerm, O_WRONLY)) == -1)  {
         //
         //         perror("open: ");
         //     }
@@ -613,7 +616,7 @@ int consume(comando_t item, int num)  {
     }
     //printf("ja mandei os dados\n\n");
 
-    close(paipe);  /*testar erro*/
+    close(pipeTerm);  /*testar erro*/
 
 
 	testMutexLock(&mutexCount);
@@ -627,9 +630,9 @@ int consume(comando_t item, int num)  {
 
 	if (count == 0)  {
 
-		if ((rc = pthread_cond_signal(&cond)) != 0)  {
+		if ((error = pthread_cond_signal(&cond)) != 0)  {
 
-			errno = rc;
+			errno = error;
 
 			perror("pthread_cond_signal: ");
 		}
@@ -640,16 +643,19 @@ int consume(comando_t item, int num)  {
 	return 0;
 }
 
+
+/*****************************************/
+/*          FUNCOES AUXILIARES           */
+/*****************************************/
+
 /* Funcao testMutexLock verifica se e possivel trancar o mutex, atraves da funcao pthread_mutex_lock().
  * Retorna 0 em caso afirmativo e resulta em erro caso contrario. */
 
 int testMutexLock(pthread_mutex_t *cadeado)  {
 
-	int rc;
+	if((error = pthread_mutex_lock(cadeado)) != 0)  {
 
-	if((rc = pthread_mutex_lock(cadeado)) != 0)  {
-
-		errno = rc;
+		errno = error;
 
 		perror("pthread_mutex_lock: ");
 	}
@@ -662,11 +668,9 @@ int testMutexLock(pthread_mutex_t *cadeado)  {
 
 int testMutexUnlock(pthread_mutex_t *cadeado)  {
 
-	int rc;
+	if((error = pthread_mutex_unlock(cadeado)) != 0)  {
 
-	if((rc = pthread_mutex_unlock(cadeado)) != 0)  {
-
-		errno = rc;
+		errno = error;
 
 		perror("pthread_mutex_unlock: ");
 	}
@@ -718,11 +722,9 @@ int testSemDestroy(sem_t *semaforo)  {
 
 int testMutexDestroy(pthread_mutex_t *cadeado)  {
 
-	int rc;
+	if((error = pthread_mutex_destroy(cadeado)) != 0)  {
 
-	if((rc = pthread_mutex_destroy(cadeado)) != 0)  {
-
-		errno = rc;
+		errno = error;
 
 		perror("pthread_mutex_destroy: ");
 	}

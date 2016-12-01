@@ -15,6 +15,11 @@
 #include <pthread.h>
 #include <semaphore.h>
 #include <time.h>
+#include <stdlib.h>
+#include <errno.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
 #define NUM_CONTAS 10
 #define TAXAJURO 0.1
@@ -54,7 +59,6 @@ typedef struct  {
 } comando_t;
 
 comando_t cmdbuffer[CMD_BUFFER_DIM];
-
 
 pthread_mutex_t cadeadoC;
 pthread_mutex_t mutexContas[NUM_CONTAS];
