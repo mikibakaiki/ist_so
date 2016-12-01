@@ -374,7 +374,7 @@ int main(int argc, char** argv)  {
         }
 
 
-		
+
 		/* Simular */
 
 		else if (strcmp(args[0], COMANDO_SIMULAR) == 0)  {

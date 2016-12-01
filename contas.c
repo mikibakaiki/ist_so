@@ -26,18 +26,14 @@
 
 
 /***   CONSTANTES   ***/
-
-
 int buff_write_idx = 0, buff_read_idx = 0, count = 0;
 
+int numB, error;
 
 /* Flag para verificar signals. */
-
 int sig_find = 0;
 
-
 /***   FUNCOES   ***/
-
 
 int contaExiste(int idConta)  {
 
@@ -80,11 +76,17 @@ void inicializarContas()  {
 int debitar(int idConta, int valor, int num)  {
 
   	atrasar();
+    char buf[1024];
 
   	if (!contaExiste(idConta) || valor < 0)  {
 
-        dprintf(fd, "%d: %s(%d, %d) - ERRO\n", num, COMANDO_DEBITAR, idConta, valor);
+        if ((numB = snprintf(buf, sizeof(buf), "%d: %s(%d, %d) - ERRO\n", num, COMANDO_DEBITAR, idConta, valor)) >=sizeof(buf))  {
+            printf("Erro snprintf\n");
+        }
 
+        if ((error = write(fd, buf, strlen(buf))) == -1)  {
+            perror("write_debitar: ");
+        }
 		return -1;
     }
 
@@ -92,7 +94,13 @@ int debitar(int idConta, int valor, int num)  {
 
   	if (contasSaldos[idConta - 1] < valor)  {
 
-        dprintf(fd, "%d: %s(%d, %d) - ERRO\n", num, COMANDO_DEBITAR, idConta, valor);
+        if ((numB = snprintf(buf, sizeof(buf), "%d: %s(%d, %d) - ERRO\n", num, COMANDO_DEBITAR, idConta, valor)) >=sizeof(buf))  {
+            printf("Erro snprintf\n");
+        }
+
+        if ((error = write(fd, buf, strlen(buf))) == -1)  {
+            perror("write_debitar: ");
+        }
 
         testMutexUnlock(&mutexContas[idConta - 1]);
 
@@ -103,7 +111,13 @@ int debitar(int idConta, int valor, int num)  {
 
   	contasSaldos[idConta - 1] -= valor;
 
-    dprintf(fd, "%d: %s(%d, %d) - OK\n", num, COMANDO_DEBITAR, idConta, valor);
+    if ((numB = snprintf(buf, sizeof(buf), "%d: %s(%d, %d) - OK\n", num, COMANDO_DEBITAR, idConta, valor)) >= sizeof(buf))  {
+        printf("Erro sprintf\n");
+    }
+
+    if ((error = write(fd, buf, strlen(buf))) == -1)  {
+        perror("write_debitar: ");
+    }
 
   	testMutexUnlock(&mutexContas[idConta - 1]);
 
@@ -135,13 +149,22 @@ int debitarTransf(int idConta, int valor)  {
 }
 
 
-
 int creditar(int idConta, int valor, int num)  {
 
   	atrasar();
 
+    char buf[1024];
+
   	if (!contaExiste(idConta) || valor < 0)  {
-        dprintf(fd, "%d: %s(%d, %d) - ERRO\n", num, COMANDO_CREDITAR, idConta, valor);
+
+        if ((numB = snprintf(buf, sizeof(buf), "%d: %s(%d, %d) - ERRO\n", num, COMANDO_CREDITAR, idConta, valor)) >= sizeof(buf))  {
+            printf("Erro snprintf\n");
+        }
+
+        if ((error = write(fd, buf, strlen(buf))) == -1)  {
+            perror("write_creditar: ");
+        }
+
 		return -1;
     }
 
@@ -149,7 +172,13 @@ int creditar(int idConta, int valor, int num)  {
 
   	contasSaldos[idConta - 1] += valor;
 
-    dprintf(fd, "%d: %s(%d,%d) - OK\n", num, COMANDO_CREDITAR, idConta, valor);
+    if ((numB = snprintf(buf, sizeof(buf), "%d: %s(%d,%d) - OK\n", num, COMANDO_CREDITAR, idConta, valor)) >=sizeof(buf))  {
+        printf("Erro snprintf\n");
+    }
+
+    if ((error = write(fd, buf, strlen(buf))) == -1)  {
+        perror("write_creditar: ");
+    }
 
   	testMutexUnlock(&mutexContas[idConta - 1]);
 
@@ -177,12 +206,19 @@ int creditarTransf(int idConta, int valor)  {
 int lerSaldo(int idConta, int num)  {
 
 	int i;
+    char buf[1024];
 
 	atrasar();
 
 	if (!contaExiste(idConta))  {
 
-        dprintf(fd, "%d: %s(%d) - ERRO\n", num, COMANDO_LER_SALDO, idConta);
+        if ((numB = snprintf(buf, sizeof(buf), "%d: %s(%d) - ERRO\n", num, COMANDO_LER_SALDO, idConta)) >= sizeof(buf))  {
+            printf("Erro snprintf\n");
+        }
+
+        if ((error = write(fd, buf, strlen(buf))) == -1)  {
+            perror("write_lerSaldo: ");
+        }
 
 		return -1;
     }
@@ -191,7 +227,13 @@ int lerSaldo(int idConta, int num)  {
 
 	i = contasSaldos[idConta - 1];
 
-    dprintf(fd, "%d: %s(%d) - OK\n", num, COMANDO_LER_SALDO, idConta);
+    if ((numB = snprintf(buf, sizeof(buf), "%d: %s(%d) - OK\n", num, COMANDO_LER_SALDO, idConta)) >= sizeof(buf))  {
+        printf("Erro snprintf\n");
+    }
+
+    if ((error = write(fd, buf, strlen(buf))) == -1)  {
+        perror("write_lerSaldo: ");
+    }
 
 	testMutexUnlock(&mutexContas[idConta - 1]);
 
@@ -280,10 +322,18 @@ void handler(int sig)  {
 
 int transferir(int idConta, int idContaDest, int valor, int num)  {
 
+    char buf[1024];
 
 	if (!contaExiste(idConta) || !contaExiste(idContaDest) || idConta == idContaDest)  {
 
-        dprintf(fd, "%d: %s(%d, %d, %d) - ERRO\n", num, COMANDO_TRANSFERIR, idConta, idContaDest, valor);
+        if ((numB = snprintf(buf, sizeof(buf), "%d: %s(%d, %d, %d) - ERRO\n", num, COMANDO_TRANSFERIR, idConta, idContaDest, valor)) >= sizeof(buf))  {
+            printf("Erro snprintf\n");
+        }
+
+        if ((error = write(fd, buf, strlen(buf))) == -1)  {
+            perror("write_transferir: ");
+        }
+
 		return -1;
     }
 
@@ -292,7 +342,14 @@ int transferir(int idConta, int idContaDest, int valor, int num)  {
 
 	if (debitarTransf(idConta, valor) !=0)  {
 
-        dprintf(fd, "%d: %s(%d, %d, %d) - ERRO\n", num, COMANDO_TRANSFERIR, idConta, idContaDest, valor);
+        if ((numB = snprintf(buf, sizeof(buf), "%d: %s(%d, %d, %d) - ERRO\n", num, COMANDO_TRANSFERIR, idConta, idContaDest, valor)) >= sizeof(buf))  {
+            printf("Erro snprintf\n");
+        }
+
+        if ((error = write(fd, buf, strlen(buf))) == -1)  {
+            perror("write_transferir: ");
+        }
+
 		testMutexUnlock(&mutexContas[max(idConta - 1, idContaDest - 1)]);
 		testMutexUnlock(&mutexContas[min(idConta - 1, idContaDest - 1)]);
 
@@ -301,14 +358,28 @@ int transferir(int idConta, int idContaDest, int valor, int num)  {
 
 	if ( creditarTransf(idContaDest, valor) != 0)  {
 
-        dprintf(fd, "%d: %s(%d, %d, %d) - ERRO\n", num, COMANDO_TRANSFERIR, idConta, idContaDest, valor);
+        if ((numB = snprintf(buf, sizeof(buf), "%d: %s(%d, %d, %d) - ERRO\n", num, COMANDO_TRANSFERIR, idConta, idContaDest, valor)) >= sizeof(buf))  {
+            printf("Erro snprintf\n");
+        }
+
+        if ((error = write(fd, buf, strlen(buf))) == -1)  {
+            perror("write_transferir: ");
+        }
+
 		testMutexUnlock(&mutexContas[max(idConta - 1, idContaDest - 1)]);
 		testMutexUnlock(&mutexContas[min(idConta - 1, idContaDest - 1)]);
 
 		return -1;
 	}
 
-    dprintf(fd, "%d: %s(%d, %d, %d) - OK\n", num, COMANDO_TRANSFERIR, idConta, idContaDest, valor);
+    if ((numB = snprintf(buf, sizeof(buf), "%d: %s(%d, %d, %d) - OK\n", num, COMANDO_TRANSFERIR, idConta, idContaDest, valor)) >= sizeof(buf))  {
+        printf("Erro snprintf\n");
+    }
+
+    if ((error = write(fd, buf, strlen(buf))) == -1)  {
+        perror("write_transferir: ");
+    }
+
 	testMutexUnlock(&mutexContas[max(idConta - 1, idContaDest - 1)]);
 	testMutexUnlock(&mutexContas[min(idConta - 1, idContaDest - 1)]);
 
@@ -435,7 +506,7 @@ int consume(comando_t item, int num)  {
 
     //printf("cheguei ao consume\n");
 
-    int paipe, pipeWrite;
+    int paipe;
     //printf("check\n");
     if((paipe = open(item.nome, O_WRONLY)) == -1) {
         perror("open do consume: ");
@@ -453,14 +524,14 @@ int consume(comando_t item, int num)  {
 
 		if (saldo < 0)  {
 
-        	if ((pipeWrite = snprintf(text, sizeof(text), "%s(%d): Erro.\n", COMANDO_LER_SALDO, item.idConta)) >= sizeof(text))  {
+        	if ((numB = snprintf(text, sizeof(text), "%s(%d): Erro.\n", COMANDO_LER_SALDO, item.idConta)) >= sizeof(text))  {
                 printf("Erro snprintf\n");
             }
         }
 
     	else {
 
-        	if ((pipeWrite = snprintf(text, sizeof(text), "%s(%d): O saldo da conta é %d.\n", COMANDO_LER_SALDO, item.idConta, saldo)) >= sizeof(text))  {
+        	if ((numB = snprintf(text, sizeof(text), "%s(%d): O saldo da conta é %d.\n", COMANDO_LER_SALDO, item.idConta, saldo)) >= sizeof(text))  {
                 printf("Erro snprintf\n");
             }
         }
@@ -470,13 +541,13 @@ int consume(comando_t item, int num)  {
 
 		if (creditar (item.idConta, item.valor, num) < 0)  {
 
-            if ((pipeWrite = snprintf(text, sizeof(text), "%s(%d, %d): Erro.\n", COMANDO_CREDITAR, item.idConta, item.valor)) >= sizeof(text))  {
+            if ((numB = snprintf(text, sizeof(text), "%s(%d, %d): Erro.\n", COMANDO_CREDITAR, item.idConta, item.valor)) >= sizeof(text))  {
                 printf("Erro snprintf\n");
             }
         }
 
     	else  {
-            if ((pipeWrite = snprintf(text, sizeof(text), "%s(%d, %d): OK\n", COMANDO_CREDITAR, item.idConta, item.valor)) >= sizeof(text))  {
+            if ((numB = snprintf(text, sizeof(text), "%s(%d, %d): OK.\n", COMANDO_CREDITAR, item.idConta, item.valor)) >= sizeof(text))  {
                 printf("Erro snprintf\n");
             }
 
@@ -489,14 +560,14 @@ int consume(comando_t item, int num)  {
 
 		if (debitar (item.idConta, item.valor, num) < 0)  {
 
-            if ((pipeWrite = snprintf(text, sizeof(text), "%s(%d, %d): Erro.\n", COMANDO_DEBITAR, item.idConta, item.valor)) >= sizeof(text))  {
+            if ((numB = snprintf(text, sizeof(text), "%s(%d, %d): Erro.\n", COMANDO_DEBITAR, item.idConta, item.valor)) >= sizeof(text))  {
                 printf("Erro snprintf\n");
             }
         }
 
         else  {
 
-            if ((pipeWrite = snprintf(text, sizeof(text), "%s(%d, %d): OK\n", COMANDO_DEBITAR, item.idConta, item.valor)) >= sizeof(text))  {
+            if ((numB = snprintf(text, sizeof(text), "%s(%d, %d): OK.\n", COMANDO_DEBITAR, item.idConta, item.valor)) >= sizeof(text))  {
                 printf("Erro snprintf\n");
             }
         }
@@ -506,14 +577,14 @@ int consume(comando_t item, int num)  {
 
 		if ( (transferir(item.idConta, item.idContaDestino, item.valor, num) != 0) )  {
 
-            if ((pipeWrite = snprintf(text, sizeof(text), "Erro ao transferir valor da conta %d para a conta %d\n", item.idConta, item.idContaDestino)) >= sizeof(text))  {
+            if ((numB = snprintf(text, sizeof(text), "Erro ao transferir valor da conta %d para a conta %d.\n", item.idConta, item.idContaDestino)) >= sizeof(text))  {
                 printf("Erro snprintf\n");
             }
         }
 
 		else  {
 
-            if ((pipeWrite = snprintf(text, sizeof(text), "transferir(%d, %d, %d): OK\n", item.idConta, item.idContaDestino, item.valor)) >= sizeof(text))  {
+            if ((numB = snprintf(text, sizeof(text), "transferir(%d, %d, %d): OK.\n", item.idConta, item.idContaDestino, item.valor)) >= sizeof(text))  {
                 printf("Erro snprintf\n");
             }
         }
@@ -524,8 +595,7 @@ int consume(comando_t item, int num)  {
 		pthread_exit(EXIT_SUCCESS);
 	}
 
-    int auxW;//printf("size of text: %s\n\n", text);
-    if ((auxW = write(paipe, text, sizeof(text))) == -1)  {
+    if ((error = write(paipe, text, sizeof(text))) == -1)  {
         // if(errno == EPIPE)  {
         //     int err;
         //     printf("Perdida conexao com i-banco.\n");
