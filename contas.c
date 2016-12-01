@@ -20,6 +20,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <string.h>
+#include <time.h>
 
 #define atrasar() sleep(ATRASO)
 
@@ -235,7 +236,7 @@ void simular(int numAnos)  {
 		for (idConta = 1; idConta <= NUM_CONTAS; idConta++)  {
 
 			saldo = lerSaldoTransf(idConta, 0);
-        
+
 			if (ano != 0)  {
 
 		  		creditarTransf(idConta, saldo*TAXAJURO);
@@ -266,7 +267,6 @@ void simular(int numAnos)  {
 
 /* Funcao de tratamento de um signal. Ao reconhecer que recebe um signal,
  * volta a reconfigurar o que o processo filho faz, caso receba outro signal.*/
-
 
 void handler(int sig)  {
 
@@ -327,7 +327,7 @@ comando_t produzir(int op, int idOri, int val, int idDest, char *nome)  {
 
   	comando_t i;
 
-  	if (op <= OP_SAIR_AGORA)  {
+  	if (op <= OP_SAIR)  {
 
 	  	i.operacao = op;
 
@@ -438,7 +438,7 @@ int consume(comando_t item, int num)  {
     int paipe, pipeWrite;
     //printf("check\n");
     if((paipe = open(item.nome, O_WRONLY)) == -1) {
-        perror("open: ");
+        perror("open do consume: ");
         exit(-1);
     }
 
@@ -453,14 +453,14 @@ int consume(comando_t item, int num)  {
 
 		if (saldo < 0)  {
 
-        	if ((pipeWrite = snprintf(text, sizeof(text), "%s(%d): Erro.\n\n", COMANDO_LER_SALDO, item.idConta)) >= sizeof(text))  {
+        	if ((pipeWrite = snprintf(text, sizeof(text), "%s(%d): Erro.\n", COMANDO_LER_SALDO, item.idConta)) >= sizeof(text))  {
                 printf("Erro snprintf\n");
             }
         }
 
     	else {
 
-        	if ((pipeWrite = snprintf(text, sizeof(text), "%s(%d): O saldo da conta é %d.\n\n", COMANDO_LER_SALDO, item.idConta, saldo)) >= sizeof(text))  {
+        	if ((pipeWrite = snprintf(text, sizeof(text), "%s(%d): O saldo da conta é %d.\n", COMANDO_LER_SALDO, item.idConta, saldo)) >= sizeof(text))  {
                 printf("Erro snprintf\n");
             }
         }
@@ -470,13 +470,13 @@ int consume(comando_t item, int num)  {
 
 		if (creditar (item.idConta, item.valor, num) < 0)  {
 
-            if ((pipeWrite = snprintf(text, sizeof(text), "%s(%d, %d): Erro.\n\n", COMANDO_CREDITAR, item.idConta, item.valor)) >= sizeof(text))  {
+            if ((pipeWrite = snprintf(text, sizeof(text), "%s(%d, %d): Erro.\n", COMANDO_CREDITAR, item.idConta, item.valor)) >= sizeof(text))  {
                 printf("Erro snprintf\n");
             }
         }
 
     	else  {
-            if ((pipeWrite = snprintf(text, sizeof(text), "%s(%d, %d): OK\n\n", COMANDO_CREDITAR, item.idConta, item.valor)) >= sizeof(text))  {
+            if ((pipeWrite = snprintf(text, sizeof(text), "%s(%d, %d): OK\n", COMANDO_CREDITAR, item.idConta, item.valor)) >= sizeof(text))  {
                 printf("Erro snprintf\n");
             }
 
@@ -489,14 +489,14 @@ int consume(comando_t item, int num)  {
 
 		if (debitar (item.idConta, item.valor, num) < 0)  {
 
-            if ((pipeWrite = snprintf(text, sizeof(text), "%s(%d, %d): Erro.\n\n", COMANDO_DEBITAR, item.idConta, item.valor)) >= sizeof(text))  {
+            if ((pipeWrite = snprintf(text, sizeof(text), "%s(%d, %d): Erro.\n", COMANDO_DEBITAR, item.idConta, item.valor)) >= sizeof(text))  {
                 printf("Erro snprintf\n");
             }
         }
 
         else  {
 
-            if ((pipeWrite = snprintf(text, sizeof(text), "%s(%d, %d): OK\n\n", COMANDO_DEBITAR, item.idConta, item.valor)) >= sizeof(text))  {
+            if ((pipeWrite = snprintf(text, sizeof(text), "%s(%d, %d): OK\n", COMANDO_DEBITAR, item.idConta, item.valor)) >= sizeof(text))  {
                 printf("Erro snprintf\n");
             }
         }
@@ -506,25 +506,41 @@ int consume(comando_t item, int num)  {
 
 		if ( (transferir(item.idConta, item.idContaDestino, item.valor, num) != 0) )  {
 
-            if ((pipeWrite = snprintf(text, sizeof(text), "Erro ao transferir valor da conta %d para a conta %d\n\n", item.idConta, item.idContaDestino)) >= sizeof(text))  {
+            if ((pipeWrite = snprintf(text, sizeof(text), "Erro ao transferir valor da conta %d para a conta %d\n", item.idConta, item.idContaDestino)) >= sizeof(text))  {
                 printf("Erro snprintf\n");
             }
         }
 
 		else  {
 
-            if ((pipeWrite = snprintf(text, sizeof(text), "transferir(%d, %d, %d): OK\n\n", item.idConta, item.idContaDestino, item.valor)) >= sizeof(text))  {
+            if ((pipeWrite = snprintf(text, sizeof(text), "transferir(%d, %d, %d): OK\n", item.idConta, item.idContaDestino, item.valor)) >= sizeof(text))  {
                 printf("Erro snprintf\n");
             }
         }
     }
 
 	if (item.operacao == OP_SAIR)  {
-
+        close(paipe);
 		pthread_exit(EXIT_SUCCESS);
 	}
-    //printf("size of text: %s\n\n", text);
-    write(paipe, text, sizeof(text));
+
+    int auxW;//printf("size of text: %s\n\n", text);
+    if ((auxW = write(paipe, text, sizeof(text))) == -1)  {
+        // if(errno == EPIPE)  {
+        //     int err;
+        //     printf("Perdida conexao com i-banco.\n");
+        //     printf("A tentar conexao...\n");
+        //     err = close(paipe);
+        //
+        //     if ((open(paipe, O_WRONLY)) == -1)  {
+        //
+        //         perror("open: ");
+        //     }
+        //
+        //     /*continue;*/
+        // }
+        perror("write: ");
+    }
     //printf("ja mandei os dados\n\n");
 
     close(paipe);  /*testar erro*/

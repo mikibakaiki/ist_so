@@ -24,6 +24,7 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <string.h>
+#include <time.h>
 
 #define BUFFER_SIZE 100
 
@@ -55,12 +56,12 @@ int main (int argc, char** argv)  {
     int paipe;
 
     if((paipe = open("/tmp/i-banco-pipe", O_RDONLY) ) == -1)  {
-    	perror("open: ");
+    	perror("open i-banco-pipe i-banco.c: ");
         exit(-1);
     }
 
     if ((fd = open("/tmp/log.txt", O_WRONLY | O_CREAT | O_TRUNC, S_IRWXU | S_IRWXG | S_IRWXO )) == -1)  {
-        perror("open: ");
+        perror("open log.txt i.banco.c: ");
         exit(-1);
     }
 
@@ -109,21 +110,11 @@ int main (int argc, char** argv)  {
      * Como estamos no processo pai, define-se SIG_IGN para tratar o sinal, ou seja, ignora-o.*/
 
     if (signal(SIGUSR1, SIG_IGN) == SIG_ERR)
-
         perror("signal: ");
 
 
     while (1)  {
 
-        //printf("entrei no while\n");
-
-        //int numargs;
-
-        //printf("vou chegar ao numargs\n");
-
-        //numargs = readLineArguments(args, MAXARGS+1, buffer, BUFFER_SIZE);
-
-        //printf("passei o numargs\n");
         int error;
 
         comando_t comando;
@@ -146,6 +137,7 @@ int main (int argc, char** argv)  {
             }
             continue;
         }
+
         else if(error == -1)
             perror("read: ");
 
@@ -157,87 +149,53 @@ int main (int argc, char** argv)  {
         printf("estrutura:\noperacao: %d\nConta: %d\nValor: %d\nPATH: %s\n\n\n", comando.operacao, comando.idConta, comando.valor, comando.nome);
 
         if (comando.operacao == OP_LERSALDO || comando.operacao == OP_CREDITAR || comando.operacao == OP_DEBITAR || comando.operacao == OP_TRANSFERIR)  {
-
             writeBuf(comando);
-
         }
 
+       	if (comando.operacao == OP_SAIR)  {
 
-        /*if (comparar sair ou sair agora)
-
-            if(sair agora)
-
-        else if(simular)
-
-        else if(threads trabalhadoras)
-
-        else (comando desconhecido)*/
-
-
-
-
-
-
-
-
-
-
-
-
-        /* EOF (end of file) do stdin ou comando "sair" */
-
-       	if  (comando.operacao == OP_SAIR)  {
-
-            if (comando.operacao == OP_SAIR_AGORA)  {
+            if (comando.valor == -2)  {
 
                 /* A funcao kill() envia um signal a todos os processos, incluindo o processo pai.*/
 
                 kill(0, SIGUSR1);
+
             }
 
-        	printf("i-banco vai terminar.\n--\n");
+            printf("--\ni-banco vai terminar.\n--\n");
 
     	    int i;
-            comando_t input;
-    	    for(i = 0; i < NUM_TRABALHADORAS; i++)  {
 
-                input = produzir(OP_SAIR, -1, -1, -1, "sair");
-                writeBuf(input);
+    	    for(i = 0; i < NUM_TRABALHADORAS; i++)  {
+                writeBuf(comando);
             }
 
             int estado;
             pid_t test;
 
-            while (1)  {
-
-
+            while (numFilhos > 0)  {
                  /* A funcao wait() aguarda que um processo filho termine.
                  * Em caso de sucesso, devolve o PID do processo filho terminado.
                  * Em caso de erro, devolve -1 e devolve para a variavel errno o codigo do erro.
-                 * O erro ECHILD ocorre quando ja nao ha mais processos filho.*/
+                 * O erro EINTR significa que chegou um signal que interrompeu a espera pela terminacao
+                 * do filho; voltamos a esperar. */
 
-                if ((test = wait(&estado)) == -1)  {
-
-                    if (errno == ECHILD)
-
-                        break;
-
-                    else
-
+                if ((test = wait(&estado)) < 0)  {
+                    if (errno == EINTR)  {
+                        continue;
+                    }
+                    else  {
                         perror("wait: ");
+                        exit(EXIT_FAILURE);
+                    }
                 }
-
-                if (WIFEXITED(estado) > 0)
-
+                numFilhos--;
+                // printf("%d\n\n", numFilhos);
+                if (WIFEXITED(estado))
                     printf("FILHO TERMINADO (PID=%d; terminou normalmente)\n", test);
-
-
-                if (WIFSIGNALED(estado) != 0)
-
+                else
                     printf("FILHO TERMINADO (PID=%d; terminou abruptamente)\n", test);
             }
-
-       	    printf("--\ni-banco terminou.\n");
 
             for (i = 0; i < NUM_CONTAS; i++)  {
 
@@ -256,9 +214,10 @@ int main (int argc, char** argv)  {
             testSemDestroy(&escrita);
             testSemDestroy(&leitura);
 
+            printf("--\ni-banco terminou.\n--\n");
+
             exit(EXIT_SUCCESS);
         }
-
 
         else if (comando.operacao == -1)
 
@@ -304,7 +263,7 @@ int main (int argc, char** argv)  {
             /* A funcao signal() define a funcao handler() como a funcao que processa
              * o signal SIGUSR1, que e definido pelo utilizador. */
 
-            if (signal(SIGUSR1,handler) == SIG_ERR)
+            if (signal(SIGUSR1, handler) == SIG_ERR)
                 perror("signal: ");
 
             if (pid == 0)  {
@@ -322,16 +281,18 @@ int main (int argc, char** argv)  {
                 }
 
                 if ((newF = open(fileName, O_WRONLY | O_CREAT | O_TRUNC, S_IRWXU | S_IRWXG | S_IRWXO )) == -1)  {
-                    perror("open: ");
+                    perror("open do processo filho: ");
                 }
-
+                printf("newf e %d\n\n", newF);
                 aux = dup2(newF, 1);
+                printf("aux e %d\n\n", aux);
 
                 //printf("vou simular\n");
 
                 simular(numAnos);
                 //printf("acabei de simular\n");
-                close(aux);
+                close(aux);  /*tenho que fechar este e o newF ??? */
+                close(newF);
                 exit(EXIT_SUCCESS);
             }
 

@@ -24,6 +24,7 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <string.h>
+#include <time.h>
 
 
 #define MAXARGS 4
@@ -48,6 +49,11 @@ int main(int argc, char** argv)  {
 
     int paipe;
 
+	/*if(signal(SIGPIPE, SIG_IGN) == SIG_ERR)  {
+
+		perror("signal SIGPIPE: ");
+	}*/
+
     if ((paipe = snprintf(paipeName, sizeof(paipeName), "/tmp/pipe-terminal-%d", getpid())) >= sizeof(paipeName))  {
         printf("Erro snprintf\n");
     }
@@ -69,16 +75,14 @@ int main(int argc, char** argv)  {
     	perror("open: ");
     }
 
-    int rc;
-
-    printf("Bem-vinda/o ao i-banco\n\n");
+    printf("Bem-vinda/o ao i-banco-terminal\n\n");
 
     /* A funcao signal() recebe um signal SIGUSR1, predefinido pelo utilizador.
      * Como estamos no processo pai, define-se SIG_IGN para tratar o sinal, ou seja, ignora-o.*/
 
-    if (signal(SIGUSR1, SIG_IGN) == SIG_ERR)
+    /*if (signal(SIGUSR1, SIG_IGN) == SIG_ERR)
 
-        perror("signal: ");
+        perror("signal: ");*/
 
     while (1)  {
 
@@ -92,79 +96,51 @@ int main(int argc, char** argv)  {
              (numargs > 0 &&
              (strcmp(args[0], COMANDO_SAIR) == 0)))  {
 
+			int error;
+			comando_t input;
 
-            //if (numargs > 1 && strcmp(args[1], "agora") == 0)  {
+            if (numargs > 1 && strcmp(args[1], "agora") == 0)  {
 
-            /*A funcao kill() envia um signal a todos os processos, incluindo o processo pai.*/
+	            input = produzir(OP_SAIR, -2, -2, -2, paipeName);
 
-            	//kill(0, SIGUSR1);
-            //}
+				printf("estrutura SAIR AGORA:\noperacao: %d\nConta: %d\nValor: %d\nPATH: %s\n\n\n", input.operacao, input.idConta, input.valor, input.nome);
 
-        	printf("i-banco vai terminar.\n--\n");
+				if((error = write(fdPipeP, &input, sizeof(comando_t))) == -1)  {
 
-    	    int i;
+					// if(errno == EPIPE)  {
+					// 	printf("Perdida conexao com i-banco.\n");
+					// 	printf("A tentar conexao...\n");
+					// 	close(argv[1]);
+					//
+					// 	if ((open(argv[1], O_WRONLY)) == -1)  {
+					//
+					//     	perror("open: ");
+					//     }
+					//
+					// 	continue;
+					// }
+	            	perror("write: ");
+	        	}
+			}
 
-            comando_t input;
+			input = produzir(OP_SAIR, -1, -1, -1, paipeName);
 
-    	    for(i = 0; i < NUM_TRABALHADORAS; i++)  {
+			printf("estrutura SAIR:\noperacao: %d\nConta: %d\nValor: %d\nPATH: %s\n\n\n", input.operacao, input.idConta, input.valor, input.nome);
 
-                input = produzir(OP_SAIR, -1, -1, -1, "sair");
-
-                writeBuf(input);
+			if((error = write(fdPipeP, &input, sizeof(comando_t))) == -1)  {
+				// if(errno == EPIPE)  {
+				// 	printf("Perdida conexao com i-banco.\n");
+				// 	printf("A tentar conexao...\n");
+				// 	close(argv[1]);
+				// 	if ((open(argv[1], O_WRONLY)) == -1)  {
+				//
+				// 		perror("open: ");
+				// 	}
+				//
+				// 	continue;
+				// }
+				perror("write: ");
             }
-
-            int estado;
-            pid_t test;
-
-            while (1)  {
-
-
-                 /* A funcao wait() aguarda que um processo filho termine.
-                 * Em caso de sucesso, devolve o PID do processo filho terminado.
-                 * Em caso de erro, devolve -1 e devolve para a variavel errno o codigo do erro.
-                 * O erro ECHILD ocorre quando ja nao ha mais processos filho.*/
-
-                if ((test = wait(&estado)) == -1)  {
-
-                    if (errno == ECHILD)
-
-                        break;
-
-                    else
-
-                        perror("wait: ");
-                }
-
-                if (WIFEXITED(estado) > 0)
-
-                    printf("FILHO TERMINADO (PID=%d; terminou normalmente)\n", test);
-
-
-                if (WIFSIGNALED(estado) != 0)
-
-                    printf("FILHO TERMINADO (PID=%d; terminou abruptamente)\n", test);
-            }
-
-       	    printf("--\ni-banco terminou.\n");
-
-            for (i = 0; i < NUM_CONTAS; i++)  {
-
-                testMutexDestroy(&mutexContas[i]);
-            }
-
-            if ((rc = pthread_cond_destroy(&cond)) != 0)  {
-
-                errno = rc;
-
-                perror("pthread_cond_destroy: ");
-            }
-
-            testMutexDestroy(&cadeadoC);
-            testMutexDestroy(&mutexCount);
-            testSemDestroy(&escrita);
-            testSemDestroy(&leitura);
-
-            exit(EXIT_SUCCESS);
         }
 
 
@@ -196,9 +172,21 @@ int main(int argc, char** argv)  {
 			//printf("Vou receber comando do pipe\n");
 
             if((error = write(fdPipeP, &input, sizeof(comando_t))) == -1)  {
-
+				// if(errno == EPIPE)  {
+				// 	printf("Perdida conexao com i-banco.\n");
+				// 	printf("A tentar conexao...\n");
+				// 	close(argv[1]);
+				// 	if ((open(argv[1], O_WRONLY)) == -1)  {
+				//
+				// 		perror("open: ");
+				// 	}
+				//
+				// 	continue;
+				// }
             	perror("write: ");
             }
+
+			time(&start);
 
 			int fdPipeT;
 
@@ -208,12 +196,16 @@ int main(int argc, char** argv)  {
 		    }
 
 			read(fdPipeT, output, BUFFER_SIZE);
+			time(&end);
+
+			diff = difftime(end, start);
 
 			if((error = close(fdPipeT)) == -1)  {
 				perror("close: ");
 			}
 
 			printf("%s", output);
+			printf("Tempo de execucao: %f\n\n", diff);
 
 
             //printf("Processei o comando e pus no buffer\n");
@@ -240,9 +232,20 @@ int main(int argc, char** argv)  {
 			//printf("Vou receber comando do pipe\n");
 
             if((error = write(fdPipeP, &input, sizeof(comando_t))) == -1)  {
-
+				// if(errno == EPIPE)  {
+				// 	printf("Perdida conexao com i-banco.\n");
+				// 	printf("A tentar conexao...\n");
+				// 	close(argv[1]);
+				// 	if ((open(argv[1], O_WRONLY)) == -1)  {
+				//
+				// 		perror("open: ");
+				// 	}
+				//
+				// 	continue;
+				// }
             	perror("write: ");
             }
+			time(&start);
 			int fdPipeT;
 			if ((fdPipeT = open(paipeName ,O_RDONLY)) == -1)  {
 		        perror("open: ");
@@ -250,12 +253,15 @@ int main(int argc, char** argv)  {
 		    }
 
 			read(fdPipeT, output, BUFFER_SIZE);
+			time(&end);
+
+			diff = difftime(end, start);
 
 			if((error = close(fdPipeT)) == -1)  {
 				perror("close: ");
 			}
 			printf("%s", output);
-
+			printf("Tempo de execucao: %f\n\n", diff);
 
         }
 
@@ -280,9 +286,20 @@ int main(int argc, char** argv)  {
 			//printf("Vou receber comando do pipe\n");
 
             if((error = write(fdPipeP, &input, sizeof(comando_t))) == -1)  {
-
+				// if(errno == EPIPE)  {
+				// 	printf("Perdida conexao com i-banco.\n");
+				// 	printf("A tentar conexao...\n");
+				// 	close(argv[1]);
+				// 	if ((open(argv[1], O_WRONLY)) == -1)  {
+				//
+				// 		perror("open: ");
+				// 	}
+				//
+				// 	continue;
+				// }
             	perror("write: ");
             }
+			time(&start);
 
 			int fdPipeT;
 
@@ -292,12 +309,14 @@ int main(int argc, char** argv)  {
 		    }
 
 			read(fdPipeT, output, BUFFER_SIZE);
+			time(&end);
+			diff = difftime(end, start);
 
 			if((error = close(fdPipeT)) == -1)  {
 				perror("close: ");
 			}
 			printf("%s", output);
-
+			printf("Tempo de execucao: %f\n\n", diff);
         }
 
         /* Transferir */
@@ -321,9 +340,20 @@ int main(int argc, char** argv)  {
 			//printf("Vou receber comando do pipe\n");
 
             if((error = write(fdPipeP, &input, sizeof(comando_t))) == -1)  {
-
+				// if(errno == EPIPE)  {
+				// 	printf("Perdida conexao com i-banco.\n");
+				// 	printf("A tentar conexao...\n");
+				// 	close(argv[1]);
+				// 	if ((open(argv[1], O_WRONLY)) == -1)  {
+				//
+				// 		perror("open: ");
+				// 	}
+				//
+				// 	continue;
+				// }
             	perror("write: ");
             }
+			time(&start);
 
 			int fdPipeT;
 
@@ -333,13 +363,18 @@ int main(int argc, char** argv)  {
 		    }
 
 			read(fdPipeT, output, BUFFER_SIZE);
+			time(&end);
+			diff = difftime(end, start);
 
 			if((error = close(fdPipeT)) == -1)  {
 				perror("close: ");
 			}
 			printf("%s", output);
-
+			printf("Tempo de execucao: %f\n\n", diff);
         }
+
+
+		
 		/* Simular */
 
 		else if (strcmp(args[0], COMANDO_SIMULAR) == 0)  {
@@ -362,6 +397,17 @@ int main(int argc, char** argv)  {
 
             if((error = write(fdPipeP, &input, sizeof(comando_t))) == -1)  {
 
+				// if(errno == EPIPE)  {
+				// 	printf("Perdida conexao com i-banco.\n");
+				// 	printf("A tentar conexao...\n");
+				// 	close(argv[1]);
+				// 	if ((open(argv[1], O_WRONLY)) == -1)  {
+				//
+				// 		perror("open: ");
+				// 	}
+				//
+				// 	continue;
+				// }
             	perror("write: ");
             }
 
@@ -379,7 +425,6 @@ int main(int argc, char** argv)  {
 			}*/
 
         }
-
 
 		/* Sair Terminal */
 
@@ -402,7 +447,7 @@ int main(int argc, char** argv)  {
 
         else
 
-            printf("Comando desconhecido. Tente de novo.\n");
+            printf("Comando desconhecido. Tente de novo.\n\n");
 
     }
 }

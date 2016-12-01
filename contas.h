@@ -14,12 +14,13 @@
 
 #include <pthread.h>
 #include <semaphore.h>
+#include <time.h>
 
 #define NUM_CONTAS 10
 #define TAXAJURO 0.1
 #define CUSTOMANUTENCAO 1
 
-#define ATRASO 0
+#define ATRASO 1
 
 #define NUM_TRABALHADORAS 3  /*numero de threads*/
 #define CMD_BUFFER_DIM (NUM_TRABALHADORAS * 2)  /*dimensao do buffer circular*/
@@ -38,8 +39,7 @@
 #define OP_DEBITAR 2
 #define OP_SIMULAR 3
 #define OP_SAIR 4
-#define OP_SAIR_AGORA 5
-#define OP_TRANSFERIR 6
+#define OP_TRANSFERIR 5
 
 
 
@@ -71,6 +71,9 @@ int fd, newF;
 
 int contasSaldos[NUM_CONTAS];
 pid_t pidFilhos[MAXFILHOS];
+
+time_t start, end;
+double diff;
 
 
 
