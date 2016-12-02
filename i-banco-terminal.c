@@ -161,20 +161,7 @@ int main(int argc, char** argv)  {
 				}
 				perror("write: ");
 			}
-
-			if((error = unlink(pipeTerminalName)) == -1)  {
-				perror("unlink: ");
-			}
-
-			if ((error = close(pipeD)) == -1)  {
-				perror("close: ");
-				exit(EXIT_FAILURE);
-			}
-
-			printf("--\ni-banco-terminal terminou.\n--\n");
-			exit(EXIT_SUCCESS);
         }
-
 
         else if (numargs == 0)
 
