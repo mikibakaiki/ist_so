@@ -51,10 +51,10 @@ int main(int argc, char** argv)  {
 	int pipeD;						/* /tmp/i-banco-pipe pipe descriptor */
 	int pipeTerm;					/* /tmp/pipe-terminal-PID pipe descriptor */
 
-	/*if(signal(SIGPIPE, SIG_IGN) == SIG_ERR)  {
+	if(signal(SIGPIPE, SIG_IGN) == SIG_ERR)  {
 
 		perror("signal SIGPIPE: ");
-	}*/
+	}
 
     if ((numB = snprintf(pipeTerminalName, sizeof(pipeTerminalName), "/tmp/pipe-terminal-%d", getpid())) >= sizeof(pipeTerminalName))  {
         printf("Erro snprintf\n");
@@ -71,8 +71,6 @@ int main(int argc, char** argv)  {
 
     	perror("mkfifo: ");
     }
-
-
 
     if ((pipeD = open(argv[1], O_WRONLY)) == -1)  {
 
@@ -250,16 +248,20 @@ int main(int argc, char** argv)  {
 
 					printf("Perdida conexao com i-banco.\n");
 
-					printf("A tentar conexao...\n");
+					printf("A tentar conexao...\n\n");
 
 					if ((error = close(pipeD)) == -1)  {
 						perror("close: ");
 						exit(EXIT_FAILURE);
 					}
 
+					printf("dei close\n");
+
 					if ((pipeD = open(argv[1], O_WRONLY)) == -1)  {
 						perror("open: ");
 					}
+
+					printf("dei open. fd = %d\n", pipeD);
 
 					continue;
 				}
@@ -423,7 +425,7 @@ int main(int argc, char** argv)  {
 
             input = produzir(OP_SIMULAR, -1, atoi(args[1]), -1, pipeTerminalName);
 
-			printf("estrutura:\noperacao: %d\nConta: %d\nValor: %d\nPATH: %s\n\n", input.operacao, input.idConta, input.valor, input.nome);
+			//printf("estrutura:\noperacao: %d\nConta: %d\nValor: %d\nPATH: %s\n\n", input.operacao, input.idConta, input.valor, input.nome);
 
 			//printf("Vou receber comando do pipe\n");
 

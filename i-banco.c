@@ -61,6 +61,8 @@ int main (int argc, char** argv)  {
         exit(EXIT_FAILURE);
     }
 
+    printf("abri o pipe i-banco-pipe: %d\n", pipeD);
+
     if ((fd = open("/tmp/log.txt", O_WRONLY | O_CREAT | O_TRUNC, S_IRWXU | S_IRWXG | S_IRWXO )) == -1)  {
         perror("open /tmp/log.txt no i.banco.c: ");
         exit(EXIT_FAILURE);
