@@ -1,0 +1,9 @@
+creditar 1 10
+creditar 2 10
+lerSaldo 1
+lerSaldo 2
+transferir 1 2 10
+lerSaldo 1
+simular 3
+transferir 2 1 20
+simular 3
