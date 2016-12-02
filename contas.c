@@ -114,7 +114,7 @@ int debitar(int idConta, int valor, int num)  {
   	contasSaldos[idConta - 1] -= valor;
 
     if ((numB = snprintf(buf, sizeof(buf), "%d: %s(%d, %d) - OK\n", num, COMANDO_DEBITAR, idConta, valor)) >= sizeof(buf))  {
-        printf("Erro sprintf\n");
+        printf("Erro snprintf\n");
     }
 
     if ((error = write(fd, buf, strlen(buf))) == -1)  {
@@ -593,30 +593,24 @@ int consume(comando_t item, int num)  {
     }
 
 	if (item.operacao == OP_SAIR)  {
-        close(pipeTerm);
+
+        if ((error = close(pipeTerm)) == -1)  {
+            perror("close: ");
+            exit(EXIT_FAILURE);
+        }
+
 		pthread_exit(EXIT_SUCCESS);
 	}
 
     if ((error = write(pipeTerm, text, sizeof(text))) == -1)  {
-
-        // if(errno == EPIPE)  {
-        //     int err;
-        //     printf("Perdida conexao com i-banco.\n");
-        //     printf("A tentar conexao...\n");
-        //     err = close(pipeTerm);
-        //
-        //     if ((open(pipeTerm, O_WRONLY)) == -1)  {
-        //
-        //         perror("open: ");
-        //     }
-        //
-        //     /*continue;*/
-        // }
         perror("write: ");
     }
     //printf("ja mandei os dados\n\n");
 
-    close(pipeTerm);  /*testar erro*/
+    if ((error = close(pipeTerm)) == -1)  {
+        perror("close: ");
+        exit(EXIT_FAILURE);
+    }
 
 
 	testMutexLock(&mutexCount);

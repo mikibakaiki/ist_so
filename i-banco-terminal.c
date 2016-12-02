@@ -208,7 +208,9 @@ int main(int argc, char** argv)  {
 				exit(-1);
 		    }
 
-			read(pipeTerm, output, BUFFER_SIZE);
+			if ((error = read(pipeTerm, output, BUFFER_SIZE)) == -1)  {
+				perror("read_debitar: ");
+			}
 
 			time(&end);
 
@@ -275,7 +277,9 @@ int main(int argc, char** argv)  {
 				exit(-1);
 		    }
 
-			read(pipeTerm, output, BUFFER_SIZE);
+			if ((error = read(pipeTerm, output, BUFFER_SIZE)) == -1)  {
+				perror("read_creditar: ");
+			}
 
 			time(&end);
 
@@ -337,7 +341,9 @@ int main(int argc, char** argv)  {
 				exit(-1);
 		    }
 
-			read(pipeTerm, output, BUFFER_SIZE);
+			if ((error = read(pipeTerm, output, BUFFER_SIZE)) == -1)  {
+				perror("read_lerSaldo: ");
+			}
 
 			time(&end);
 
@@ -361,8 +367,6 @@ int main(int argc, char** argv)  {
 
                 continue;
             }
-
-
 
             input = produzir(OP_TRANSFERIR, atoi(args[1]), atoi(args[2]), atoi(args[3]), pipeTerminalName);
 
@@ -399,7 +403,10 @@ int main(int argc, char** argv)  {
 				exit(-1);
 		    }
 
-			read(pipeTerm, output, BUFFER_SIZE);
+			if ((error = read(pipeTerm, output, BUFFER_SIZE)) == -1)  {
+				perror("read_transferir: ");
+			}
+
 			time(&end);
 			diff = difftime(end, start);
 
