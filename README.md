@@ -8,3 +8,6 @@
 * Testar e confirmar comportamento do SIGPIPE handler;
 * Apagar prints de debug;
 * Comentar código.
+* Testar várias hipóteses;
+
+** Vale a pena dar hipotese ao utilizador o que fazer se o i-banco for terminado com um i-banco-terminal conectado? **
