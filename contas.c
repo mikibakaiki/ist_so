@@ -667,7 +667,7 @@ int testMutexUnlock(pthread_mutex_t *cadeado)  {
 
 int testSemWait(sem_t *semaforo)  {
 
-	if(sem_wait(semaforo) != 0)  {
+	if(sem_wait(semaforo) != 0 && (error != 22))  {
 
 		perror("sem_wait: ");
 	}
@@ -680,7 +680,7 @@ int testSemWait(sem_t *semaforo)  {
 
 int testSemPost(sem_t *semaforo)  {
 
-	if(sem_post(semaforo) != 0)  {
+	if(sem_post(semaforo) != 0 && (error != 22))  {
 
 		perror("sem_post: ");
 	}
@@ -693,7 +693,7 @@ int testSemPost(sem_t *semaforo)  {
 
 int testSemDestroy(sem_t *semaforo)  {
 
-	if(sem_destroy(semaforo) != 0)  {
+	if(sem_destroy(semaforo) != 0 && (errno != 22))  {
 
 		perror("sem_destroy: ");
 	}

@@ -47,14 +47,20 @@ int main (int argc, char** argv)  {
 
     printf("A espera de conexao.\n\n");
 
+    /* Caso ja exista ficheiro com o caminho indicado, remove-o. */
+
     if ((error = unlink("/tmp/i-banco-pipe")) == -1 && errno != ENOENT)  {
         perror("unlink i-banco-pipe: ");
     }
+
+    /* Cria um pipe com o nome contido no primeiro argumento. */
 
     if ((error = mkfifo("/tmp/i-banco-pipe", 0777)) == -1)  {
     	perror("mkfifo: ");
         exit(EXIT_FAILURE);
     }
+
+    /* Abre o ficheiro cuja directoria e dada como argumento. */
 
     if ((pipeD = open("/tmp/i-banco-pipe", O_RDONLY)) == -1)  {
     	perror("open i-banco-pipe i-banco.c: ");
@@ -62,6 +68,8 @@ int main (int argc, char** argv)  {
     }
 
     printf("Bem-vinda/o ao i-banco\n\n");
+
+    /* Abre o ficheiro cuja directoria e dada como argumento. */
 
     if ((fd = open("/tmp/log.txt", O_WRONLY | O_CREAT | O_TRUNC, S_IRWXU | S_IRWXG | S_IRWXO )) == -1)  {
         perror("open /tmp/log.txt no i.banco.c: ");
@@ -111,6 +119,8 @@ int main (int argc, char** argv)  {
         int errClose;
 
         error = read(pipeD, &comando, sizeof(comando_t));
+
+        /* Caso a funcao read() retorne zero, fecha-se o pipe e volta a abrir-se, e fica a espera de uma nova ligacao. */
 
         if (error == 0)  {
 
@@ -276,22 +286,30 @@ int main (int argc, char** argv)  {
                     exit(EXIT_FAILURE);
                 }
 
-                int numB;    /* Variavel que guarda numero de bytes escritos */
-                char fileName[1024];
+                int numB;               /* Variavel que guarda numero de bytes escritos */
+                char fileName[1024];    /* Vector que guarda uma string. */
+
+                /* Escreve para o vector pipeTerminalName uma string personalizada. */
 
                 if ((numB = snprintf(fileName, sizeof(fileName), "/tmp/i-banco-sim-%d.txt", getpid())) >= sizeof(fileName))  {
                     printf("Erro snprintf\n");
                 }
 
+                /* Abre o ficheiro com nome fileName. */
+
                 if ((newF = open(fileName, O_WRONLY | O_CREAT | O_TRUNC, S_IRWXU | S_IRWXG | S_IRWXO )) == -1)  {
                     perror("open do processo filho: ");
                 }
+                /* Caso nao estivesse um close(1) no inicio do processo filho, este dup2 tinha que estar aqui.
+                 * No entanto, fica comentado. */
 
                 // if ((error = dup2(newF, 1)) == -1)  {
                 //     perror("dup2: ");
                 // }
 
                 simular(numAnos);
+
+                /* Depois de simular e de escrever para o ficheiro indicado, fechamo-lo. */
 
                 if((error = close(newF)) == -1)  {
                     perror("close: ");

@@ -51,24 +51,30 @@ int main(int argc, char** argv)  {
 	int pipeD;						/* /tmp/i-banco-pipe pipe descriptor */
 	int pipeTerm;					/* /tmp/pipe-terminal-PID pipe descriptor */
 
+
+	/* Se o i-banco-terminal receber um signal SIGPIPE, ignora-o. */
 	if(signal(SIGPIPE, SIG_IGN) == SIG_ERR)  {
 
 		perror("signal SIGPIPE: ");
 	}
 
+	/* Escreve para o vector pipeTerminalName uma string personalizada. */
     if ((numB = snprintf(pipeTerminalName, sizeof(pipeTerminalName), "/tmp/pipe-terminal-%d", getpid())) >= sizeof(pipeTerminalName))  {
         printf("Erro snprintf\n");
     }
 
+	/* Caso ja exista ficheiro com o caminho indicado, remove-o. */
 	if ((error = unlink(pipeTerminalName)) == -1 && errno != ENOENT)  {
         perror("unlink /tmp/pipe-terminal: ");
     }
 
+	/* Cria um pipe com o nome contido em pipeTerminalName. */
     if ((error = mkfifo(pipeTerminalName, 0777)) == -1)  {
 
     	perror("mkfifo: ");
     }
 
+	/* Abre o ficheiro cuja directoria e dada como argumento. */
     if ((pipeD = open(argv[1], O_WRONLY)) == -1)  {
 
     	perror("open: ");
@@ -100,6 +106,9 @@ int main(int argc, char** argv)  {
 
 	            input = produzir(OP_SAIR, -2, -2, -2, pipeTerminalName);
 
+				/* Caso a funcao write() de erro, e esse erro for EPIPE (a ponta do pipe dedicada a ler esta fechada)
+				 * remove-se o ficheiro com o caminho indicado, fecha-se o seu file descriptor e o i-banco-terminal encerra. */
+
 				if ((error = write(pipeD, &input, sizeof(comando_t))) == -1)  {
 
 					if (errno == EPIPE)  {
@@ -127,6 +136,7 @@ int main(int argc, char** argv)  {
 
 			input = produzir(OP_SAIR, -1, -1, -1, pipeTerminalName);
 
+			/* Ver linhas 109 e 110. */
 
 			if ((error = write(pipeD, &input, sizeof(comando_t))) == -1)  {
 
@@ -153,7 +163,6 @@ int main(int argc, char** argv)  {
 			}
 
 			if((error = unlink(pipeTerminalName)) == -1)  {
-
 				perror("unlink: ");
 			}
 
@@ -187,6 +196,8 @@ int main(int argc, char** argv)  {
 
             input = produzir(OP_DEBITAR, atoi(args[1]), atoi(args[2]), -1, pipeTerminalName);
 
+			/* Ver linhas 109 e 110. */
+
 			if ((error = write(pipeD, &input, sizeof(comando_t))) == -1)  {
 
 				if (errno == EPIPE)  {
@@ -213,10 +224,14 @@ int main(int argc, char** argv)  {
 
 			time(&start);
 
+			/* O pipe de leitura e aberto*/
+
 		    if ((pipeTerm = open(pipeTerminalName ,O_RDONLY)) == -1)  {
 		        perror("open: ");
 				exit(-1);
 		    }
+
+			/* Efectuada leitura do conteudo proveniente do pipe que recebe a resposta do i-banco. */
 
 			if ((error = read(pipeTerm, output, BUFFER_SIZE)) == -1)  {
 				perror("read_debitar: ");
@@ -247,6 +262,8 @@ int main(int argc, char** argv)  {
 
             input = produzir(OP_CREDITAR, atoi(args[1]), atoi(args[2]), -1, pipeTerminalName);
 
+			/* Ver linhas 109 e 110. */
+
 			if ((error = write(pipeD, &input, sizeof(comando_t))) == -1)  {
 
 				if (errno == EPIPE)  {
@@ -273,10 +290,14 @@ int main(int argc, char** argv)  {
 
 			time(&start);
 
+			/* O pipe de leitura e aberto*/
+
 			if ((pipeTerm = open(pipeTerminalName ,O_RDONLY)) == -1)  {
 		        perror("open: ");
 				exit(-1);
 		    }
+
+			/* Efectuada leitura do conteudo proveniente do pipe que recebe a resposta do i-banco. */
 
 			if ((error = read(pipeTerm, output, BUFFER_SIZE)) == -1)  {
 				perror("read_creditar: ");
@@ -308,6 +329,8 @@ int main(int argc, char** argv)  {
 
             input = produzir(OP_LERSALDO, atoi(args[1]), -1, -1, pipeTerminalName);
 
+			/* Ver linhas 109 e 110. */
+
 			if ((error = write(pipeD, &input, sizeof(comando_t))) == -1)  {
 
 				if (errno == EPIPE)  {
@@ -334,10 +357,14 @@ int main(int argc, char** argv)  {
 
 			time(&start);
 
+			/* O pipe de leitura e aberto*/
+
 			if ((pipeTerm = open(pipeTerminalName ,O_RDONLY)) == -1)  {
 		        perror("open: ");
 				exit(-1);
 		    }
+
+			/* Efectuada leitura do conteudo proveniente do pipe que recebe a resposta do i-banco. */
 
 			if ((error = read(pipeTerm, output, BUFFER_SIZE)) == -1)  {
 				perror("read_lerSaldo: ");
@@ -368,6 +395,8 @@ int main(int argc, char** argv)  {
 
             input = produzir(OP_TRANSFERIR, atoi(args[1]), atoi(args[2]), atoi(args[3]), pipeTerminalName);
 
+			/* Ver linhas 109 e 110. */
+
 			if ((error = write(pipeD, &input, sizeof(comando_t))) == -1)  {
 
 				if (errno == EPIPE)  {
@@ -394,10 +423,14 @@ int main(int argc, char** argv)  {
 
 			time(&start);
 
+			/* O pipe de leitura e aberto*/
+
 			if ((pipeTerm = open(pipeTerminalName ,O_RDONLY)) == -1)  {
 		        perror("open: ");
 				exit(-1);
 		    }
+
+			/* Efectuada leitura do conteudo proveniente do pipe que recebe a resposta do i-banco. */
 
 			if ((error = read(pipeTerm, output, BUFFER_SIZE)) == -1)  {
 				perror("read_transferir: ");
@@ -426,9 +459,7 @@ int main(int argc, char** argv)  {
 
             input = produzir(OP_SIMULAR, -1, atoi(args[1]), -1, pipeTerminalName);
 
-			//printf("estrutura:\noperacao: %d\nConta: %d\nValor: %d\nPATH: %s\n\n", input.operacao, input.idConta, input.valor, input.nome);
-
-			//printf("Vou receber comando do pipe\n");
+			/* Ver linhas 109 e 110. */
 
 			if ((error = write(pipeD, &input, sizeof(comando_t))) == -1)  {
 
@@ -461,7 +492,6 @@ int main(int argc, char** argv)  {
 
 
 			if((error = unlink(pipeTerminalName)) == -1)  {
-
 				perror("unlink: ");
 			}
 
