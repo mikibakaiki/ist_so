@@ -38,14 +38,14 @@ int main (int argc, char** argv)  {
 
     inicializarContas();
 
-    int error;  /* Variavel que testa erros */
-    int pipeD;  /* /tmp/i-banco-pipe pipe descriptor */
-
+    int error;                          /* Variavel que testa erros */
+    int pipeD;                          /* /tmp/i-banco-pipe pipe descriptor */
 
     pthread_t tid[NUM_TRABALHADORAS];   /* Vector que guarda as ids das threads */
     int t_num[NUM_TRABALHADORAS];       /* Vector que guarda o numero de threads */
 
-    printf("Bem-vinda/o ao i-banco\n\n");
+
+    printf("A espera de conexao.\n\n");
 
     if ((error = unlink("/tmp/i-banco-pipe")) == -1 && errno != ENOENT)  {
         perror("unlink i-banco-pipe: ");
@@ -61,14 +61,12 @@ int main (int argc, char** argv)  {
         exit(EXIT_FAILURE);
     }
 
-    printf("abri o pipe i-banco-pipe: %d\n", pipeD);
+    printf("Bem-vinda/o ao i-banco\n\n");
 
     if ((fd = open("/tmp/log.txt", O_WRONLY | O_CREAT | O_TRUNC, S_IRWXU | S_IRWXG | S_IRWXO )) == -1)  {
         perror("open /tmp/log.txt no i.banco.c: ");
         exit(EXIT_FAILURE);
     }
-
-    printf("fd do OPEN e %d\n", fd);
 
     if ((error = pthread_mutex_init(&cadeadoC, NULL)) != 0)  {
         errno = error;
@@ -121,6 +119,9 @@ int main (int argc, char** argv)  {
                 exit(EXIT_FAILURE);
             }
 
+            printf("Todos os terminais foram fechados.\n");
+            printf("Abra um i-banco-terminal para continuar a executar.\n\n");
+
             if((pipeD = open("/tmp/i-banco-pipe", O_RDONLY) ) == -1)  {
                 perror("open: ");
                 exit(EXIT_FAILURE);
@@ -132,17 +133,11 @@ int main (int argc, char** argv)  {
             perror("read: ");
 
 
-        //printf("recebi um comando\n");
-
-        //printf("recebi o comando e vou escreve-lo\n");
-
-        //printf("estrutura:\noperacao: %d\nConta: %d\nValor: %d\nPATH: %s\n\n\n", comando.operacao, comando.idConta, comando.valor, comando.nome);
-
         if (comando.operacao == OP_LERSALDO || comando.operacao == OP_CREDITAR || comando.operacao == OP_DEBITAR || comando.operacao == OP_TRANSFERIR)  {
             writeBuf(comando);
         }
 
-       	if (comando.operacao == OP_SAIR)  {
+       	else if (comando.operacao == OP_SAIR)  {
 
             if (comando.valor == -2)  {
 
@@ -171,18 +166,16 @@ int main (int argc, char** argv)  {
                  * do filho; voltamos a esperar. */
 
                 if ((test = wait(&estado)) < 0)  {
-
                     if (errno == EINTR)  {
-
                         continue;
                     }
 
                     else  {
-
                         perror("wait: ");
                         exit(EXIT_FAILURE);
                     }
                 }
+
                 numFilhos--;
 
                 if (WIFEXITED(estado))
@@ -208,9 +201,14 @@ int main (int argc, char** argv)  {
             testSemDestroy(&escrita);
             testSemDestroy(&leitura);
 
+
             if((error = close(pipeD)) == -1)  {
                 perror("close: ");
                 exit(EXIT_FAILURE);
+            }
+
+            if ((error = unlink("/tmp/i-banco-pipe")) == -1 && errno != ENOENT)  {
+                perror("unlink i-banco-pipe: ");
             }
 
             printf("\ni-banco terminou.\n--\n");
@@ -251,8 +249,6 @@ int main (int argc, char** argv)  {
 
             pid = fork();
 
-            //printf("PID = %d\n\n", pid);
-
             if (pid == -1)  {
                 perror("fork: ");
             }
@@ -272,6 +268,9 @@ int main (int argc, char** argv)  {
                     exit(EXIT_FAILURE);
                 }
 
+                /* close(1) fecha a entrada 1 da tabela de ficheiros abertos do processo filho.
+                 * Esta e a razao pela qual nao utilizamos o dup2. */
+
                 if((error = close(1)) == -1)  {
                     perror("close: ");
                     exit(EXIT_FAILURE);
@@ -287,19 +286,12 @@ int main (int argc, char** argv)  {
                 if ((newF = open(fileName, O_WRONLY | O_CREAT | O_TRUNC, S_IRWXU | S_IRWXG | S_IRWXO )) == -1)  {
                     perror("open do processo filho: ");
                 }
-                //printf("newf e %d\n\n", newF);
-                if ((error = dup2(newF, 1)) == -1)  {
-                    perror("dup2: ");
-                }
-                //printf("aux e %d\n\n", aux);
 
-                //printf("vou simular\n");
+                // if ((error = dup2(newF, 1)) == -1)  {
+                //     perror("dup2: ");
+                // }
 
                 simular(numAnos);
-
-                //printf("acabei de simular\n");
-
-                /*tenho que fechar este e o newF ??? */
 
                 if((error = close(newF)) == -1)  {
                     perror("close: ");

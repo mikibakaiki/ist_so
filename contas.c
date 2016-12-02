@@ -25,17 +25,23 @@
 #define atrasar() sleep(ATRASO)
 
 
-/***   CONSTANTES   ***/
+/***************************/
+/*       CONTANTES         */
+/***************************/
+
 int buff_write_idx = 0, buff_read_idx = 0, count = 0;
 
-int numB;   /* Variavel que guarda numero de bytes escritos */
-int error;  /* Variavel que testa erros */
-int fd;     /* /tmp/log.txt file descriptor */
+int numB;               /* Variavel que guarda numero de bytes escritos */
+int error;              /* Variavel que testa erros */
+int fd;                 /* /tmp/log.txt file descriptor */
+int sig_find = 0;       /* Flag para verificar signals. */
 
-/* Flag para verificar signals. */
-int sig_find = 0;
+char buf[1024];         /* Buffer que guarda texto personalizado */
 
-/***   FUNCOES   ***/
+
+/*************************/
+/*       FUNCOES         */
+/*************************/
 
 int contaExiste(int idConta)  {
 
@@ -78,7 +84,6 @@ void inicializarContas()  {
 int debitar(int idConta, int valor, int num)  {
 
   	atrasar();
-    char buf[1024];
 
   	if (!contaExiste(idConta) || valor < 0)  {
 
@@ -155,14 +160,12 @@ int creditar(int idConta, int valor, int num)  {
 
   	atrasar();
 
-    char buf[1024];
-
   	if (!contaExiste(idConta) || valor < 0)  {
 
         if ((numB = snprintf(buf, sizeof(buf), "%d: %s(%d, %d) - ERRO\n", num, COMANDO_CREDITAR, idConta, valor)) >= sizeof(buf))  {
             printf("Erro snprintf\n");
         }
-        printf("fd = %d\n", fd);
+
         if ((error = write(fd, buf, strlen(buf))) == -1)  {
             perror("write_creditar: ");
         }
@@ -174,7 +177,7 @@ int creditar(int idConta, int valor, int num)  {
 
   	contasSaldos[idConta - 1] += valor;
 
-    if ((numB = snprintf(buf, sizeof(buf), "%d: %s(%d,%d) - OK\n", num, COMANDO_CREDITAR, idConta, valor)) >=sizeof(buf))  {
+    if ((numB = snprintf(buf, sizeof(buf), "%d: %s(%d,%d) - OK\n", num, COMANDO_CREDITAR, idConta, valor)) >= sizeof(buf))  {
         printf("Erro snprintf\n");
     }
 
@@ -208,7 +211,6 @@ int creditarTransf(int idConta, int valor)  {
 int lerSaldo(int idConta, int num)  {
 
 	int i;
-    char buf[1024];
 
 	atrasar();
 
@@ -256,7 +258,6 @@ int lerSaldoTransf(int idConta, int num)  {
 
 	return i;
 }
-
 
 void simular(int numAnos)  {
 
@@ -324,8 +325,6 @@ void handler(int sig)  {
 
 int transferir(int idConta, int idContaDest, int valor, int num)  {
 
-    char buf[1024];
-
 	if (!contaExiste(idConta) || !contaExiste(idContaDest) || idConta == idContaDest)  {
 
         if ((numB = snprintf(buf, sizeof(buf), "%d: %s(%d, %d, %d) - ERRO\n", num, COMANDO_TRANSFERIR, idConta, idContaDest, valor)) >= sizeof(buf))  {
@@ -339,10 +338,10 @@ int transferir(int idConta, int idContaDest, int valor, int num)  {
 		return -1;
     }
 
-	testMutexLock(&mutexContas[min(idConta - 1, idContaDest -1 )]);
-	testMutexLock(&mutexContas[max(idConta - 1, idContaDest - 1)]);
+	testMutexLock(&mutexContas[min(idConta - 1, idContaDest -1)]);
+	testMutexLock(&mutexContas[max(idConta - 1, idContaDest -1)]);
 
-	if (debitarTransf(idConta, valor) !=0)  {
+	if (debitarTransf(idConta, valor) != 0)  {
 
         if ((numB = snprintf(buf, sizeof(buf), "%d: %s(%d, %d, %d) - ERRO\n", num, COMANDO_TRANSFERIR, idConta, idContaDest, valor)) >= sizeof(buf))  {
             printf("Erro snprintf\n");
@@ -394,7 +393,7 @@ int transferir(int idConta, int idContaDest, int valor, int num)  {
 /*       PARTE 2         */
 /*************************/
 
-/* Funcao que recebe os 3 argumentos iniciais e os coloca na estrutura comando_t, retornando-a. */
+/* Funcao que produz estruturas comando_t e retorna-as. */
 
 comando_t produzir(int op, int idOri, int val, int idDest, char *nome)  {
 
@@ -506,19 +505,19 @@ comando_t readBuf()  {
 
 int consume(comando_t item, int num)  {
 
-    //printf("cheguei ao consume\n");
-
     int pipeTerm;
-    //printf("check\n");
-    if((pipeTerm = open(item.nome, O_WRONLY)) == -1) {
+    int saldo;
+    char text[1024];
+
+    if (item.operacao == OP_SAIR)  {
+
+        pthread_exit(EXIT_SUCCESS);
+    }
+
+    if((pipeTerm = open(item.nome, O_WRONLY)) == -1)  {
         perror("open do consume: ");
         exit(-1);
     }
-
-    //printf("passei o open %d\n\n", pipeTerm);
-
-	int saldo;
-    char text[1024];
 
 	if (item.operacao == OP_LERSALDO)  {
 
@@ -592,16 +591,6 @@ int consume(comando_t item, int num)  {
         }
     }
 
-	if (item.operacao == OP_SAIR)  {
-
-        if ((error = close(pipeTerm)) == -1)  {
-            perror("close: ");
-            exit(EXIT_FAILURE);
-        }
-
-		pthread_exit(EXIT_SUCCESS);
-	}
-
     if ((error = write(pipeTerm, text, sizeof(text))) == -1)  {
         perror("write: ");
     }
@@ -641,16 +630,17 @@ int consume(comando_t item, int num)  {
 /*****************************************/
 /*          FUNCOES AUXILIARES           */
 /*****************************************/
+/* 22 e o codigo do erro EINVAL.
+ * Estamos a ignora-lo porque ele aparece aleatoriamente quando o primeiro comando do i-banco-terminal e sair ou sair agora. */
 
 /* Funcao testMutexLock verifica se e possivel trancar o mutex, atraves da funcao pthread_mutex_lock().
  * Retorna 0 em caso afirmativo e resulta em erro caso contrario. */
 
 int testMutexLock(pthread_mutex_t *cadeado)  {
 
-	if((error = pthread_mutex_lock(cadeado)) != 0)  {
+	if((error = pthread_mutex_lock(cadeado)) != 0 && (error != 22))  {
 
 		errno = error;
-
 		perror("pthread_mutex_lock: ");
 	}
 
@@ -662,7 +652,7 @@ int testMutexLock(pthread_mutex_t *cadeado)  {
 
 int testMutexUnlock(pthread_mutex_t *cadeado)  {
 
-	if((error = pthread_mutex_unlock(cadeado)) != 0)  {
+	if((error = pthread_mutex_unlock(cadeado)) != 0 && (error != 22))  {
 
 		errno = error;
 
@@ -716,7 +706,7 @@ int testSemDestroy(sem_t *semaforo)  {
 
 int testMutexDestroy(pthread_mutex_t *cadeado)  {
 
-	if((error = pthread_mutex_destroy(cadeado)) != 0)  {
+	if((error = pthread_mutex_destroy(cadeado)) != 0 && (error != 22) )  {
 
 		errno = error;
 
@@ -726,8 +716,8 @@ int testMutexDestroy(pthread_mutex_t *cadeado)  {
 	return 0;
 }
 
-
 /* Funcao que recebe dois inteiros, e devolve o menor de ambos. */
+
 int min(int x, int y)  {
 
 	if (x < y)
