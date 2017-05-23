@@ -1,4 +1,4 @@
-## Operating Systems Project 1 - Semester 2016/2017 ##
+## Operating Systems Project | 1st Semester 2016/2017 ##
 
 * João Miguel Campos, 75785, LEIC-T
 * Carolina Monteiro, 77990, LERC
